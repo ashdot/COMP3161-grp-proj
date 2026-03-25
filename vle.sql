@@ -1,7 +1,9 @@
+DROP DATABASE IF EXISTS Vle; 
 CREATE DATABASE Vle;
 USE Vle;
 
 -- Users
+
 CREATE TABLE UserAccount(
     userID INT PRIMARY KEY, -- userID is 9 digits long ( 620 students, 200 - staff, 111 - admin )
     fname VARCHAR(50) NOT NULL,
