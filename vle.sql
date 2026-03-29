@@ -9,7 +9,8 @@ CREATE TABLE UserAccount(
     fname VARCHAR(50) NOT NULL,
     lname VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    accessLvl ENUM('student','lecturer','admin') NOT NULL
+    accessLvl ENUM('student','lecturer','admin') NOT NULL, --They go to uwi and uwi makes the account for them
+    password VARCHAR(100) NOT NULL
 );
 
 -- Courses
@@ -22,7 +23,7 @@ CREATE TABLE Course(
 -- Course Membership (students/roles)
 CREATE TABLE CourseMember(
     userID INT NOT NULL,
-    memberRole VARCHAR(20) NOT NULL,
+    memberRole ENUM('student','lecturer') NOT NULL,
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (userID) REFERENCES UserAccount(userID) ON DELETE CASCADE,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE,
@@ -66,7 +67,7 @@ CREATE TABLE SectionItems(
     title VARCHAR(50),
     secBody VARCHAR(500),
     secContent LONGBLOB, -- Use a fake docment generator 
-    itemtype VARCHAR(15),
+    itemtype VARCHAR(15), -- assignment, links, files, slides
     dueDate DATE,
     FOREIGN KEY (secID) REFERENCES Section(secID) ON DELETE CASCADE
 );
@@ -84,6 +85,7 @@ CREATE TABLE CalendarEvents(
     calenderID INT NOT NULL,
     eventDate DATE,
     eventTitle VARCHAR(50),
+    secItemID INT,
     FOREIGN KEY (calenderID) REFERENCES CourseCalendar(calenderID) ON DELETE CASCADE
 );
 
