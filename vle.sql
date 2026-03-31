@@ -69,7 +69,7 @@ CREATE TABLE SectionItems(
     secContent LONGBLOB, -- Use a fake docment generator 
     itemtype VARCHAR(15), -- assignment, links, files, slides
     dueDate DATE,
-    FOREIGN KEY (secID) REFERENCES Section(secID) ON DELETE CASCADE
+    FOREIGN KEY (secID) REFERENCES CourseSection(secID) ON DELETE CASCADE
 );
 
 -- Course Calendar
