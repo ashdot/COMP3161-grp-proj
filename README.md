@@ -2,13 +2,8 @@
 Introduction to Database Management Systems Final Project
 
 
-TO RUN SCRIPT FILE - TYPE THE NAME IN THE TERMINAL 
-EG. 
-PYTHON FILE_NAME.PY
+To run script file:
+1. Go to terminal and type: python gen_vle.py
 
-
-
-then go mysql and type:
-
-mysql -u root -p vl < "pathto_insert.sql"
+2 Go cmd admin and type: mysql -u root -p vl < "pathto_insert.sql"
 
