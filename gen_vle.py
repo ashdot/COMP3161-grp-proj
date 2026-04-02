@@ -28,7 +28,7 @@ fake = Faker()
 random.seed(42)
 Faker.seed(42)
 
-OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vle_inserts.sql")
+OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vle_insert.sql")
 
 NUM_STUDENTS  = 100_000
 NUM_LECTURERS = 200
