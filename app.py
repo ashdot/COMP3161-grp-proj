@@ -58,13 +58,22 @@ def get_submissions():
 
 # / POST /forums/{dfID}/threads ( ASH )
 @app.route('/forums/<dfID>/threads', methods=['GET','POST']) 
+def threads():
+
+    pass
 
 
 # GET    /reports/courses-50plus ( ASH )
 @app.route('/reports/courses-50', methods=['GET','POST']) 
+def top_fifty_courses():
+
+    pass
 
 # GET    /reports/lecturers-3plus ( ASH )
 @app.route('/reports/lecturers-3', methods=['GET','POST']) 
+def top_3_lecturers():
+
+    pass
 
 
 
