@@ -34,6 +34,12 @@ def get_users():
     conn.close()
     return jsonify(users)
 
+# POST /auth/login - login only
+# GET /users/{userID} - fetch user profile
+# GET /courses - list all courses
+# GET /students/{userID}/courses - get the courses done by a student
+# GET /lecturers/{userID}/courses - get the courses a lecturer teachers
+
 # GET /courses/{courseCode}/members - view other participants in the course ( ASH )
 @app.route('/courses/<courseCode>/members', methods=['GET']) 
 def get_members(courseCode):
@@ -53,7 +59,6 @@ def get_members(courseCode):
 
 
 # GET /students/{userID}/grades - student grades for each course ( ASH )
-
 @app.route('/students/<userID>/grades', methods=['GET']) 
 def get_student_grades(userID):
 
@@ -88,12 +93,11 @@ def get_student_course_grades(userID, courseCode):
 
     return jsonify(grades)
 
-
-
+# POST /courses/{courseCode}/enrollments - needed if you want to actually place students into courses. Without it, they cant see content
+# GET /courses/{courseCode}/sections - useful for structuring the course (modules, weeks, topics)
+# GET /courses/{courseCode}/content - this is hoe students access lecture notes, readings, etc 
 
 # POST /assignments/{secItemID}/submissions - Students need to submit work ( ASH ) 
-
-
 @app.route('/assignments/<secItemID>/submissions', methods=['POST'])
 def submit_submission(secItemID):
     data = request.get_json()  # get JSON payload from client
@@ -117,7 +121,12 @@ def submit_submission(secItemID):
 
     return jsonify({"message": "Submission created", "subID": inserted_id}), 201
 
-# / POST /forums/{dfID}/threads ( ASH )
+
+# PUT /submissions/{subID}/grade - lecturers need to grade
+
+# GET /courses/{courseCode}/forums
+
+# POST /forums/{dfID}/threads ( ASH )
 @app.route('/forums/<dfID>/threads', methods=['GET','POST']) 
 def threads():
 
@@ -127,8 +136,12 @@ def threads():
 
     pass
 
+# POST /threads/{dtID}/replies
 
-# GET    /reports/courses-50plus ( ASH )
+# GET /courses/{courseCode}/calendar-events
+# GET /students/{userID}/calendar-events
+
+# GET /reports/courses-50plus ( ASH )
 @app.route('/reports/courses-50', methods=['GET']) 
 def top_fifty_courses():
     
@@ -141,7 +154,9 @@ def top_fifty_courses():
 
     return(top_fifty)
 
-# GET    /reports/lecturers-3plus ( ASH )
+# GET /reports/students-5plus
+
+# GET /reports/lecturers-3plus ( ASH )
 @app.route('/reports/lecturers-3', methods=['GET']) 
 def top_3_lecturers():
 
@@ -154,7 +169,9 @@ def top_3_lecturers():
 
     return jsonify(top_3)
 
+# GET /reports/most-enrolled
 
+# GET /reports/top-students-by-average
 
 if __name__ =='__main__':
     app.run(debug=True)
