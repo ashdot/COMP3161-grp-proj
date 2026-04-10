@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
+from datetime import date
 import mysql.connector
 
 
@@ -34,16 +35,17 @@ def get_users():
     conn.close()
     return jsonify(users)
 
-# POST /auth/login - login only
+# POST /auth/login - login only (Ashani)
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.get_json()
-    username = data.get("username")
+    email = data.get("email")
     password = data.get("password")
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
+    cursor.execute("SELECT userID, fname, lname, accessLvl FROM UserAccount WHERE email=%s AND password=%s",
+                   (email, password))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -52,10 +54,72 @@ def login():
         return jsonify({"message": "Login successful", "user": user}), 200
     return jsonify({"error": "Invalid credentials"}), 401
 
-# GET /users/{userID} - fetch user profile
-# GET /courses - list all courses
+# GET /users/{userID} - fetch user profile (Ashani)
+
+@app.route("/users/<int:userID>", methods=["GET"])
+def get_user(userID):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT userID, fname, lname, email, accessLvl FROM UserAccount WHERE userID=%s", (userID,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if user:
+        return jsonify(user), 200
+    return jsonify({"error": "User not found"}), 404
+
+# GET /courses - list all courses (Ashani)
+
+@app.route("/courses", methods=["GET"])
+def list_courses():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT courseCode, courseName, department FROM Course")
+    courses = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(courses), 200
+
 # GET /students/{userID}/courses - get the courses done by a student
-# GET /lecturers/{userID}/courses - get the courses a lecturer teachers
+
+@app.route("/students/<int:userID>/courses", methods=["GET"])
+def student_courses(userID):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT c.courseCode, c.courseName, c.department
+        FROM Course c
+        JOIN CourseMember cm ON c.courseCode = cm.courseCode
+        WHERE cm.userID = %s AND cm.memberRole = 'student'
+    """, (userID,))
+    courses = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if courses:
+        return jsonify(courses), 200
+    return jsonify({"error": "No courses found for student"}), 404
+    
+# GET /lecturers/{userID}/courses - get the courses a lecturer teachers (Ashani)
+@app.route("/lecturers/<int:userID>/courses", methods=["GET"])
+def lecturer_courses(userID):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT c.courseCode, c.courseName, c.department
+        FROM Course c
+        JOIN CourseMember cm ON c.courseCode = cm.courseCode
+        WHERE cm.userID = %s AND cm.memberRole = 'lecturer'
+    """, (userID,))
+    courses = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    if courses:
+        return jsonify(courses), 200
+    return jsonify({"error": "No courses found for lecturer"}), 404
+
 
 # GET /courses/{courseCode}/members - view other participants in the course ( ASH )
 @app.route('/courses/<courseCode>/members', methods=['GET']) 
@@ -110,7 +174,31 @@ def get_student_course_grades(userID, courseCode):
 
     return jsonify(grades)
 
-# POST /courses/{courseCode}/enrollments - needed if you want to actually place students into courses. Without it, they cant see content
+# POST /courses/{courseCode}/enrollments - needed if you want to actually place students into courses. Without it, they cant see content (Ashani)
+@app.route("/courses/<string:courseCode>/enrollments", methods=["POST"])
+def enroll_student(courseCode):
+    data = request.get_json()
+    userID = data.get("userID")
+    grade = data.get("grade")  # optional, can be NULL initially
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("""
+            INSERT INTO Enrol (userID, courseCode, grade)
+            VALUES (%s, %s, %s)
+        """, (userID, courseCode, grade))
+        conn.commit()
+    except mysql.connector.Error as err:
+        cursor.close()
+        conn.close()
+        return jsonify({"error": str(err)}), 400
+
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Enrollment successful", "userID": userID, "courseCode": courseCode}), 201
+
 # GET /courses/{courseCode}/sections - useful for structuring the course (modules, weeks, topics)
 # GET /courses/{courseCode}/content - this is hoe students access lecture notes, readings, etc 
 
@@ -171,7 +259,23 @@ def top_fifty_courses():
 
     return(top_fifty)
 
-# GET /reports/students-5plus
+# GET /reports/students-5plus (Ashani)
+@app.route("/reports/students-5plus", methods=["GET"])
+def students_5plus():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT ua.userID, ua.fname, ua.lname, COUNT(cm.courseCode) AS course_count
+        FROM UserAccount ua
+        JOIN CourseMember cm ON ua.userID = cm.userID
+        WHERE cm.memberRole = 'student'
+        GROUP BY ua.userID, ua.fname, ua.lname
+        HAVING COUNT(cm.courseCode) >= 5
+    """)
+    students = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(students), 200
 
 # GET /reports/lecturers-3plus ( ASH )
 @app.route('/reports/lecturers-3', methods=['GET']) 
@@ -186,9 +290,45 @@ def top_3_lecturers():
 
     return jsonify(top_3)
 
-# GET /reports/most-enrolled
+# GET /reports/most-enrolled (Ashani)
+@app.route("/reports/most-enrolled", methods=["GET"])
+def most_enrolled_course():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT c.courseCode, c.courseName, COUNT(cm.userID) AS enrollment_count
+        FROM Course c
+        JOIN CourseMember cm ON c.courseCode = cm.courseCode
+        WHERE cm.memberRole = 'student'
+        GROUP BY c.courseCode, c.courseName
+        ORDER BY enrollment_count DESC
+        LIMIT 1
+    """)
+    course = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return jsonify(course), 200
 
-# GET /reports/top-students-by-average
+
+# GET /reports/top-students-by-average (Ashani)
+@app.route("/reports/top-students-by-average", methods=["GET"])
+def top_students_by_average():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT ua.userID, ua.fname, ua.lname, AVG(s.grade) AS avg_grade
+        FROM UserAccount ua
+        JOIN Submission s ON ua.userID = s.userID
+        WHERE ua.accessLvl = 'student' AND s.grade IS NOT NULL
+        GROUP BY ua.userID, ua.fname, ua.lname
+        ORDER BY avg_grade DESC
+        LIMIT 10
+    """)
+    students = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(students), 200
+
 
 if __name__ =='__main__':
     app.run(debug=True)
