@@ -33,7 +33,7 @@ ORDER BY totalStudents DESC
 LIMIT 10;
 
 --The top 10 students with the highest overall averages.
-CREATE VIEW top_ten_highest_averages AS
+CREATE VIEW top_ten_students AS
 SELECT u.userID, u.fname, u.lname, AVG(e.grade) AS average
 FROM UserAccount u
 JOIN Enrol e ON u.userID = e.userID

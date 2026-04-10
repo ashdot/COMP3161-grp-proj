@@ -54,8 +54,8 @@ def login():
         return jsonify({"message": "Login successful", "user": user}), 200
     return jsonify({"error": "Invalid credentials"}), 401
 
-# GET /users/{userID} - fetch user profile (Ashani)
 
+# GET /users/{userID} - fetch user profile (Ashani)
 @app.route("/users/<int:userID>", methods=["GET"])
 def get_user(userID):
     conn = get_db_connection()
@@ -69,8 +69,8 @@ def get_user(userID):
         return jsonify(user), 200
     return jsonify({"error": "User not found"}), 404
 
-# GET /courses - list all courses (Ashani)
 
+# GET /courses - list all courses (Ashani)
 @app.route("/courses", methods=["GET"])
 def list_courses():
     conn = get_db_connection()
@@ -81,8 +81,8 @@ def list_courses():
     conn.close()
     return jsonify(courses), 200
 
-# GET /students/{userID}/courses - get the courses done by a student
 
+# GET /students/{userID}/courses - get the courses done by a student
 @app.route("/students/<int:userID>/courses", methods=["GET"])
 def student_courses(userID):
     conn = get_db_connection()
@@ -101,6 +101,7 @@ def student_courses(userID):
         return jsonify(courses), 200
     return jsonify({"error": "No courses found for student"}), 404
     
+
 # GET /lecturers/{userID}/courses - get the courses a lecturer teachers (Ashani)
 @app.route("/lecturers/<int:userID>/courses", methods=["GET"])
 def lecturer_courses(userID):
@@ -155,6 +156,7 @@ def get_student_grades(userID):
     conn.close()
 
     return jsonify(grades)
+
 
 # GET /students/{userID}>/{courseCode}/grades - student grades for one course ( ASH )
 @app.route('/students/<userID>/<courseCode>/grades', methods=['GET'])
@@ -227,9 +229,51 @@ def submit_submission(secItemID):
     return jsonify({"message": "Submission created", "subID": inserted_id}), 201
 
 
-# PUT /submissions/{subID}/grade - lecturers need to grade
+# PUT /submissions/{subID}/grade - grade an assignment(Jada-Marie)
+@app.route('/submissions/<int:subID>/grade', methods=['PUT'])
+def grade_assignment(subID):
+    data = request.get_json()
 
-# GET /courses/{courseCode}/forums
+    if not data or "grade" not in data:
+        abort(400, description="Must include a 'grade' field")
+
+    grade = data.get("grade")
+
+    if not isinstance(grade, int) or not (0 <= grade <= 100):
+        abort(400, description="Grade must be an integer between 0 and 100")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT subID FROM Submission WHERE subID = %s", (subID,)) 
+    if not cursor.fetchone():
+        abort(404, description=f"Submission {subID} not found")
+    cursor.execute("""
+                    UPDATE Submission
+                    SET grade = %s
+                    WHERE subID = %s""", (grade, subID))
+    conn.commit()
+    cursor.execute("SELECT * FROM Submission WHERE subID = %s", (subID,)) 
+    gradedAssignemnt = cursor.fetchone() 
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Submission graded successfully", "submission": gradedAssignemnt}), 200
+
+
+# GET /courses/{courseCode}/forums (Jada-Marie)
+@app.route('/courses/<courseCode>/forums')
+def get_course_forums(courseCode):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""SELECT f.dfID, f.dfname
+                    FROM DiscussionForum f
+                    WHERE f.courseCode = %s""",(courseCode,))
+    courseForums = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return jsonify(courseForums)
+
 
 # POST /forums/{dfID}/threads ( ASH )
 @app.route('/forums/<dfID>/threads', methods=['GET','POST']) 
@@ -241,14 +285,74 @@ def threads():
 
     pass
 
-# POST /threads/{dtID}/replies
 
-# GET /courses/{courseCode}/calendar-events
-# GET /students/{userID}/calendar-events
+# POST /threads/{dtID}/replies (Jada-Marie)
+@app.route('/threads/<dtID>/replies', methods=['POST'])
+def reply_to_thread(dtID):
+    data = request.get_json()
+
+    userID = data.get("userID")
+    threadbody = data.get("threadbody")
+    topic = data.get("topic", None)
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+                    INSERT INTO DiscussionThread (dfID, parentpostID, userID, threadbody, topic, date_created)
+                    VALUES (%s, NULL, %s, %s, %s, CURDATE())""", (dfID, userID, threadbody, topic))
+    conn.commit()
+    new_id = cursor.lastrowid
+    cursor.close()
+    conn.close()
+
+    return jsonify({"message": "Reply created successfully"})
+
+
+# GET /courses/{courseCode}/calendar-events (Jada-Marie)
+@app.route('/courses/<courseCode>/calendar-events', methods=['GET'])
+def course_events(courseCode):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+                    SELECT ce.eventTitle, ce.eventDate
+                    FROM CalendarEvents ce
+                    JOIN CourseCalendar cc
+                    ON ce.calendarID = cc.calendarID
+                    WHERE cc.courseCode = %s
+                    ORDER BY ce.eventDate ASC""",(courseCode,))
+    courseEvents = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return jsonify(courseEvents)
+
+
+# GET /students/{userID}/calendar-events (Jada-Marie)
+@app.route('/students/<userID>/calendar-events', methods=['GET'])
+def student_events(userID):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+                    SELECT ce.eventTitle, ce.eventDate, cc.courseCode, c.courseName
+                    FROM CalendarEvents ce
+                    JOIN CourseCalendar cc
+                    ON ce.calendarID = cc.calendarID
+                    JOIN Course c
+                    ON cc.courseCode = c.courseCode
+                    JOIN ENrol e
+                    ON c.courseCode = e.courseCode
+                    WHERE e.userID = %s
+                    ORDER BY cc.courseCode ASC, ce.eventDate ASC""",(userID,))
+    studentEvents = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    return jsonify(studentEvents)
+
 
 # GET /reports/courses-50plus ( ASH )
 @app.route('/reports/courses-50', methods=['GET']) 
-def top_fifty_courses():
+def top_fifty_courses(): #i think we should find a better function name
     
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True) 
@@ -258,6 +362,7 @@ def top_fifty_courses():
     conn.close()
 
     return(top_fifty)
+
 
 # GET /reports/students-5plus (Ashani)
 @app.route("/reports/students-5plus", methods=["GET"])
@@ -272,10 +377,12 @@ def students_5plus():
         GROUP BY ua.userID, ua.fname, ua.lname
         HAVING COUNT(cm.courseCode) >= 5
     """)
+    #cursor.execute("SELECT * FROM students_5_plus_courses") i think you can just put this since the views are like tables
     students = cursor.fetchall()
     cursor.close()
     conn.close()
     return jsonify(students), 200
+
 
 # GET /reports/lecturers-3plus ( ASH )
 @app.route('/reports/lecturers-3', methods=['GET']) 
@@ -289,6 +396,7 @@ def top_3_lecturers():
     conn.close()
 
     return jsonify(top_3)
+
 
 # GET /reports/most-enrolled (Ashani)
 @app.route("/reports/most-enrolled", methods=["GET"])
@@ -304,6 +412,7 @@ def most_enrolled_course():
         ORDER BY enrollment_count DESC
         LIMIT 1
     """)
+    #cursor.execute("SELECT * FROM ten_most_enrolled")
     course = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -324,6 +433,7 @@ def top_students_by_average():
         ORDER BY avg_grade DESC
         LIMIT 10
     """)
+    #cursor.execute("SELECT * FROM top_ten_students")
     students = cursor.fetchall()
     cursor.close()
     conn.close()

@@ -74,7 +74,7 @@ CREATE TABLE SectionItems(
 
 -- Course Calendar
 CREATE TABLE CourseCalendar(
-    calenderID INT PRIMARY KEY,
+    calenderID INT PRIMARY KEY,      --fixspelling
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
 );
