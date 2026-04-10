@@ -35,6 +35,23 @@ def get_users():
     return jsonify(users)
 
 # POST /auth/login - login only
+@app.route("/auth/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if user:
+        return jsonify({"message": "Login successful", "user": user}), 200
+    return jsonify({"error": "Invalid credentials"}), 401
+
 # GET /users/{userID} - fetch user profile
 # GET /courses - list all courses
 # GET /students/{userID}/courses - get the courses done by a student
