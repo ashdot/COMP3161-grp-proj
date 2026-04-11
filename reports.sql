@@ -1,13 +1,13 @@
 USE Vle
 
---All courses that have 50 or more students(ASH)
+-- All courses that have 50 or more students(ASH)
 CREATE VIEW course_50_plus AS
 SELECT courseCode, COUNT(userID) as student_count
 FROM Enrol
 GROUP BY courseCode
 HAVING COUNT(userID) >= 50;
 
---All students that do 5 or more courses.(Jada-Marie)
+-- All students that do 5 or more courses.(Jada-Marie)
 CREATE VIEW students_5_plus_courses AS
 SELECT u.userID, u.fname, u.lname, COUNT(e.courseCode) AS numCourses
 FROM UserAccount u
@@ -15,7 +15,7 @@ JOIN Enrol e ON u.userID = e.userID
 GROUP BY u.userID, u.fname, u.lname
 HAVING COUNT(e.courseCode) >= 5;
 
---All lecturers that teach 3 or more courses.(ASH)
+-- All lecturers that teach 3 or more courses.(ASH)
 CREATE VIEW lecturers_3_plus AS
 SELECT u.userID, u.fname, u.lname, COUNT(t.courseCode) AS num_courses
 FROM UserAccount u
@@ -23,7 +23,7 @@ JOIN Teaches t ON u.userID = t.userID
 GROUP BY u.userID, u.fname, u.lname
 HAVING COUNT(t.courseCode) >= 3;
 
---The 10 most enrolled courses.(Jada-Marie)
+-- The 10 most enrolled courses.(Jada-Marie)
 CREATE VIEW ten_most_enrolled AS
 SELECT c.courseCode, c.CourseName, c.department, COUNT(e.userID) AS totalStudents
 FROM Course c
@@ -32,11 +32,23 @@ GROUP BY c.courseCode, c.courseName
 ORDER BY totalStudents DESC
 LIMIT 10;
 
---The top 10 students with the highest overall averages.(Jada-Marie)
-CREATE VIEW top_ten_students AS
-SELECT u.userID, u.fname, u.lname, AVG(e.grade) AS average
-FROM UserAccount u
-JOIN Enrol e ON u.userID = e.userID
-GROUP BY u.userID, u.fname, u.lname
-ORDER BY average DESC
-LIMIT 10;
+-- The top 10 students with the highest overall averages.(Jada-Marie)
+-- CREATE VIEW top_ten_students AS --  WHICH ONE SHOULD WE KEEP
+-- SELECT u.userID, u.fname, u.lname, AVG(e.grade) AS average
+-- FROM UserAccount u
+-- JOIN Enrol e ON u.userID = e.userID
+-- GROUP BY u.userID, u.fname, u.lname
+-- ORDER BY average DESC
+-- LIMIT 10;
+
+-- DROP VIEW top_ten_students;
+
+
+CREATE VIEW top_ten_students AS -- WHICH ONE SHOULD WE KEEP 
+SELECT ua.userID, ua.fname, ua.lname, AVG(s.grade) AS avg_grade
+FROM UserAccount ua
+JOIN Submission s ON ua.userID = s.userID
+WHERE ua.accessLvl = 'student' AND s.grade IS NOT NULL
+GROUP BY ua.userID, ua.fname, ua.lname
+ORDER BY avg_grade DESC
+LIMIT 10
