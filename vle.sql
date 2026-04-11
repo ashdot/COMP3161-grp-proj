@@ -9,7 +9,7 @@ CREATE TABLE UserAccount(
     fname VARCHAR(50) NOT NULL,
     lname VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    accessLvl ENUM('student','lecturer','admin') NOT NULL, --They go to uwi and uwi makes the account for them
+    accessLvl ENUM('student','lecturer','admin') NOT NULL, -- They go to uwi and uwi makes the account for them
     password VARCHAR(100) NOT NULL
 );
 
@@ -74,7 +74,7 @@ CREATE TABLE SectionItems(
 
 -- Course Calendar
 CREATE TABLE CourseCalendar(
-    calenderID INT PRIMARY KEY,      --fixspelling
+    calenderID INT PRIMARY KEY,      -- fixspelling
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
 );
