@@ -202,7 +202,7 @@ def enroll_student(courseCode):
     return jsonify({"message": "Enrollment successful", "userID": userID, "courseCode": courseCode}), 201
 
 # GET /courses/{courseCode}/sections - useful for structuring the course (modules, weeks, topics)
-# GET /courses/{courseCode}/content - this is hoe students access lecture notes, readings, etc 
+# GET /courses/{courseCode}/content - this is how students access lecture notes, readings, etc 
 
 # POST /assignments/{secItemID}/submissions - Students need to submit work ( ASH ) 
 @app.route('/assignments/<secItemID>/submissions', methods=['POST'])
@@ -313,11 +313,12 @@ def reply_to_thread(dtID):
 def course_events(courseCode):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+    #working w/ this spelling (calenderID) for now just so we can test it; change back if & when we fix the scripts
     cursor.execute("""
                     SELECT ce.eventTitle, ce.eventDate
                     FROM CalendarEvents ce
                     JOIN CourseCalendar cc
-                    ON ce.calendarID = cc.calendarID
+                    ON ce.calenderID = cc.calenderID       
                     WHERE cc.courseCode = %s
                     ORDER BY ce.eventDate ASC""",(courseCode,))
     courseEvents = cursor.fetchall()
@@ -336,7 +337,7 @@ def student_events(userID):
                     SELECT ce.eventTitle, ce.eventDate, cc.courseCode, c.courseName
                     FROM CalendarEvents ce
                     JOIN CourseCalendar cc
-                    ON ce.calendarID = cc.calendarID
+                    ON ce.calenderID = cc.calenderID
                     JOIN Course c
                     ON cc.courseCode = c.courseCode
                     JOIN ENrol e
