@@ -32,7 +32,7 @@ CREATE TABLE CourseMember(
 
 -- Discussion Forums
 CREATE TABLE DiscussionForum(
-    dfID INT PRIMARY KEY, 
+    dfID INT PRIMARY KEY,
     dfname VARCHAR(50) NOT NULL,
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
@@ -40,7 +40,7 @@ CREATE TABLE DiscussionForum(
 
 -- Discussion Threads
 CREATE TABLE DiscussionThread(
-    dtID INT PRIMARY KEY, 
+    dtID INT PRIMARY KEY AUTO_INCREMENT, -- Added Auto Increment
     dfID INT NOT NULL, 
     parentpostID INT NULL,
     userID INT NOT NULL,
@@ -54,15 +54,15 @@ CREATE TABLE DiscussionThread(
 
 -- Sections
 CREATE TABLE CourseSection(
-    secID INT PRIMARY KEY,
-    secname VARCHAR(50) NOT NULL,
+    secID INT PRIMARY KEY ,
+    secName VARCHAR(50) NOT NULL,
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
 );
 
 -- Section Items
 CREATE TABLE SectionItems(
-    secItemID INT PRIMARY KEY,
+    secItemID INT PRIMARY KEY AUTO_INCREMENT, -- Added Auto Increment
     secID INT NOT NULL,
     title VARCHAR(50),
     secBody VARCHAR(500),
@@ -74,24 +74,24 @@ CREATE TABLE SectionItems(
 
 -- Course Calendar
 CREATE TABLE CourseCalendar(
-    calenderID INT PRIMARY KEY,      -- fixspelling
+    calendarID INT PRIMARY KEY,   -- calendarID rename 
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
 );
 
 -- Calendar Events
 CREATE TABLE CalendarEvents(
-    eventID INT PRIMARY KEY,
-    calenderID INT NOT NULL,
+    eventID INT PRIMARY KEY AUTO_INCREMENT, -- Added Auto Increment , calendarID rename 
+    calendarID INT NOT NULL,
     eventDate DATE,
     eventTitle VARCHAR(50),
     secItemID INT,
-    FOREIGN KEY (calenderID) REFERENCES CourseCalendar(calenderID) ON DELETE CASCADE
+    FOREIGN KEY (calendarID) REFERENCES CourseCalendar(calendarID) ON DELETE CASCADE
 );
 
 -- Submissions
 CREATE TABLE Submission(
-    subID INT PRIMARY KEY,
+    subID INT PRIMARY KEY AUTO_INCREMENT, -- Added Auto Increment 
     userID INT NOT NULL,
     secItemID INT NOT NULL,
     subText VARCHAR(200),
