@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
-from flask_jwt_extended import JWTManager, create_access_token, jwt_require
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from datetime import date
 import mysql.connector
 
@@ -18,7 +18,7 @@ def get_db_connection():
     connection = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="password",
+    password="Jamaican@123456",
     database="Vle")
     return connection
 
@@ -39,15 +39,15 @@ def get_users():
     conn.close()
     return jsonify(users)
 
-@app.route("/login", methods=["POST"]) #Start of JWT Authentification 
-def login():
-    username = request.json.get("username", None)
-    password = request.json.get("password", None)
+# @app.route("/login", methods=["POST"]) #Start of JWT Authentification 
+# def login():
+#     username = request.json.get("username", None)
+#     password = request.json.get("password", None)
 
-    if username != "test" or password != "test":
-        return jsonify({"msg": "Bad username or password"}), 401
-    access_token = create_access_token(identity=username) 
-    return jsonify(access_token=access_token)
+#     if username != "test" or password != "test":
+#         return jsonify({"msg": "Bad username or password"}), 401
+#     access_token = create_access_token(identity=username) 
+#     return jsonify(access_token=access_token)
 
 
 # POST /auth/login - login only (Ashani) - TESTED SUCCESS 
@@ -392,12 +392,12 @@ def reply_to_thread(dtID):
 def course_events(courseCode):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    #working w/ this spelling (calenderID) for now just so we can test it; change back if & when we fix the scripts
+    #working w/ this spelling (calendarID) for now just so we can test it; change back if & when we fix the scripts
     cursor.execute("""
                     SELECT ce.eventTitle, ce.eventDate
                     FROM CalendarEvents ce
                     JOIN CourseCalendar cc
-                    ON ce.calenderID = cc.calenderID       
+                    ON ce.calendarID = cc.calendarID       
                     WHERE cc.courseCode = %s
                     ORDER BY ce.eventDate ASC""",(courseCode,))
     courseEvents = cursor.fetchall()
@@ -416,7 +416,7 @@ def student_events(userID):
                     SELECT ce.eventTitle, ce.eventDate, cc.courseCode, c.courseName
                     FROM CalendarEvents ce
                     JOIN CourseCalendar cc
-                    ON ce.calenderID = cc.calenderID
+                    ON ce.calendarID = cc.calendarID
                     JOIN Course c
                     ON cc.courseCode = c.courseCode
                     JOIN Enrol e
