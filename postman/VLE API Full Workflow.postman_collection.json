@@ -1,0 +1,1668 @@
+{
+  "info": {
+    "_postman_id": "d37fac5f-713c-498b-b595-bec43f690a95",
+    "name": "VLE API Full Workflow",
+    "description": "Full local workflow tests for the COMP3161 VLE API. Rebuild the local database before a clean run. This collection intentionally creates records.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Health / Public",
+      "item": [
+        {
+          "name": "Initialize Run + GET /api/data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/data"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const runStamp = Date.now().toString();",
+                  "const runId = runStamp.slice(-5);",
+                  "pm.environment.set('runId', runId);",
+                  "pm.environment.set('createdCourseCode', `TST${runId}`);",
+                  "pm.environment.set('createdStudentEmail', `postman.student.${runStamp}@vle.uwi.edu`);",
+                  "pm.environment.unset('createdStudentID');",
+                  "pm.environment.unset('createdStudentPassword');",
+                  "pm.environment.unset('createdSectionID');",
+                  "pm.environment.unset('createdSecItemID');",
+                  "pm.environment.unset('createdForumID');",
+                  "pm.environment.unset('createdThreadID');",
+                  "pm.environment.unset('createdReplyID');",
+                  "pm.environment.unset('createdSubmissionID');",
+                  "pm.environment.unset('createdCalendarEventID');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('message exists', function () { pm.expect(json).to.have.property('message'); });",
+                  "pm.test('workflow variables initialized', function () { pm.expect(pm.environment.get('createdCourseCode')).to.match(/^TST\\d{5}$/); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('users array returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });",
+                  "pm.test('user fields exist', function () { pm.expect(json[0]).to.include.keys('userID', 'fname', 'lname', 'email', 'accessLvl'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('courses array returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });",
+                  "pm.test('course fields exist', function () { pm.expect(json[0]).to.include.keys('courseCode', 'courseName', 'department'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login as student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('student login succeeds', function () { pm.expect(json).to.have.property('message', 'Login successful'); pm.expect(json.user).to.have.property('accessLvl', 'student'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login as lecturer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{lecturerEmail}}\",\n  \"password\": \"{{lecturerPassword}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('lecturer login succeeds', function () { pm.expect(json.user).to.have.property('accessLvl', 'lecturer'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login as admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('admin login succeeds', function () { pm.expect(json.user).to.have.property('accessLvl', 'admin'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Admin User And Course Setup",
+      "item": [
+        {
+          "name": "POST /users/register create workflow student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/users/register",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fname\": \"Postman\",\n  \"lname\": \"Student\",\n  \"email\": \"{{createdStudentEmail}}\",\n  \"accessLvl\": \"student\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('registered user fields exist', function () { pm.expect(json.user).to.include.keys('userID', 'email', 'accessLvl'); });",
+                  "pm.environment.set('createdStudentID', json.user.userID);",
+                  "pm.environment.set('createdStudentPassword', json.generatedPassword);",
+                  "pm.test('generated password captured', function () { pm.expect(pm.environment.get('createdStudentPassword')).to.be.a('string').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login as created student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{createdStudentEmail}}\",\n  \"password\": \"{{createdStudentPassword}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created student can log in', function () { pm.expect(json.user).to.have.property('accessLvl', 'student'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /users/{{createdStudentID}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/{{createdStudentID}}"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created user can be fetched', function () { pm.expect(json).to.have.property('userID', Number(pm.environment.get('createdStudentID'))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /courses create workflow course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseCode\": \"{{createdCourseCode}}\",\n  \"courseName\": \"Postman Workflow {{runId}}\",\n  \"department\": \"Computer Science\",\n  \"lecturerID\": 200000000\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created course returned', function () { pm.expect(json.course).to.have.property('courseCode', pm.environment.get('createdCourseCode')); });",
+                  "pm.test('defaults created', function () { pm.expect(json.defaults).to.include.keys('calendarID', 'dfID', 'secID'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /courses forbidden for student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{studentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{studentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseCode\": \"BAD{{runId}}\",\n  \"courseName\": \"Forbidden Workflow {{runId}}\",\n  \"department\": \"Computer Science\",\n  \"lecturerID\": 200000000\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /courses/{{createdCourseCode}}/enrollments",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/enrollments",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{createdStudentID}}\",\n  \"grade\": null\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('student enrolled', function () { pm.expect(json).to.have.property('courseCode', pm.environment.get('createdCourseCode')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /courses/{{createdCourseCode}}/lecturer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/lecturer",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lecturerID\": 200000000\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('lecturer assigned or already assigned', function () { pm.expect(json).to.have.property('lecturerID', 200000000); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Course Reads And Authorization",
+      "item": [
+        {
+          "name": "GET /students/{{createdStudentID}}/courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/students/{{createdStudentID}}/courses",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created course appears for student', function () { pm.expect(json.some(c => c.courseCode === pm.environment.get('createdCourseCode'))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /lecturers/200000000/courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/lecturers/200000000/courses",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('lecturer courses array returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/members",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('member roster includes created student', function () { pm.expect(json.some(m => String(m.userID) === String(pm.environment.get('createdStudentID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('forums returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums missing auth",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/forums"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums unrelated student forbidden",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{studentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{studentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Course Content",
+      "item": [
+        {
+          "name": "GET /courses/{{createdCourseCode}}/sections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('sections returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /courses/{{createdCourseCode}}/sections",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secName\": \"Postman Section {{runId}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdSectionID', json.section.secID);",
+                  "pm.test('section id captured', function () { pm.expect(pm.environment.get('createdSectionID')).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /courses/{{createdCourseCode}}/sections student forbidden",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secName\": \"Forbidden Student Section\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /sections/{{createdSectionID}}/items assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sections/{{createdSectionID}}/items",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Assignment\",\n  \"secBody\": \"Submit a short verification response.\",\n  \"secContent\": \"metadata/postman-assignment.txt\",\n  \"itemtype\": \"assignment\",\n  \"dueDate\": \"2026-05-01\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdSecItemID', json.item.secItemID);",
+                  "pm.test('assignment item created', function () { pm.expect(json.item).to.have.property('itemtype', 'assignment'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/content",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('content includes sections', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Forums And Threads",
+      "item": [
+        {
+          "name": "POST /courses/{{createdCourseCode}}/forums",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dfname\": \"Postman Forum {{runId}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdForumID', json.dfID);",
+                  "pm.test('forum id captured', function () { pm.expect(pm.environment.get('createdForumID')).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums after create",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created forum appears', function () { pm.expect(json.some(f => String(f.dfID) === String(pm.environment.get('createdForumID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /forums/{{createdForumID}}/threads",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/forums/{{createdForumID}}/threads",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Postman Thread\",\n  \"threadbody\": \"This is a top-level Postman workflow thread.\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdThreadID', json.dtID);",
+                  "pm.test('thread id captured', function () { pm.expect(pm.environment.get('createdThreadID')).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /forums/{{createdForumID}}/threads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/forums/{{createdForumID}}/threads",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created thread appears', function () { pm.expect(json.some(t => String(t.dtID) === String(pm.environment.get('createdThreadID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /threads/{{createdThreadID}}/replies",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/threads/{{createdThreadID}}/replies",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Postman Reply\",\n  \"threadbody\": \"This is a Postman workflow reply.\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdReplyID', json.dtID);",
+                  "pm.test('reply id captured', function () { pm.expect(pm.environment.get('createdReplyID')).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /threads/{{createdThreadID}}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/threads/{{createdThreadID}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('thread includes replies array', function () { pm.expect(json).to.have.property('replies').that.is.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Calendar Events",
+      "item": [
+        {
+          "name": "POST /courses/{{createdCourseCode}}/calendar-events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/calendar-events",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventDate\": \"2026-05-01\",\n  \"eventTitle\": \"Postman Due Date\",\n  \"secItemID\": \"{{createdSecItemID}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdCalendarEventID', json.eventID);",
+                  "pm.test('calendar event id captured', function () { pm.expect(pm.environment.get('createdCalendarEventID')).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/calendar-events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/courses/{{createdCourseCode}}/calendar-events",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('calendar event appears', function () { pm.expect(json.some(e => String(e.eventID) === String(pm.environment.get('createdCalendarEventID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/calendar-events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/students/{{createdStudentID}}/calendar-events",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('student calendar returned', function () { pm.expect(json).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/calendar-events?date=2026-05-01",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/students/{{createdStudentID}}/calendar-events?date=2026-05-01",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('date-filtered calendar returned', function () { pm.expect(json).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 Assignments And Grades",
+      "item": [
+        {
+          "name": "POST /assignments/{{createdSecItemID}}/submissions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/assignments/{{createdSecItemID}}/submissions",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subText\": \"My Postman workflow submission.\",\n  \"subContent\": null\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdSubmissionID', json.subID);",
+                  "pm.test('submission id captured', function () { pm.expect(pm.environment.get('createdSubmissionID')).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /submissions/{{createdSubmissionID}}/grade",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/submissions/{{createdSubmissionID}}/grade",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": 88\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('course grade returned', function () { pm.expect(json).to.have.property('courseGrade', 88); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/grades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/students/{{createdStudentID}}/grades",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('grades include created course', function () { pm.expect(json.some(g => g.courseCode === pm.environment.get('createdCourseCode'))).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/{{createdCourseCode}}/grades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/students/{{createdStudentID}}/{{createdCourseCode}}/grades",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('course grade is 88', function () { pm.expect(json[0]).to.have.property('grade', 88); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 Reports",
+      "item": [
+        {
+          "name": "GET /reports/courses-50",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/courses-50"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/students-5plus",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/students-5plus"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/lecturers-3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/lecturers-3"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/most-enrolled",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/most-enrolled"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/top-students-by-average",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports/top-students-by-average"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

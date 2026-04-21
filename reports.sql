@@ -1,4 +1,10 @@
-USE Vle
+USE Vle;
+
+DROP VIEW IF EXISTS top_ten_students;
+DROP VIEW IF EXISTS ten_most_enrolled;
+DROP VIEW IF EXISTS lecturers_3_plus;
+DROP VIEW IF EXISTS students_5_plus_courses;
+DROP VIEW IF EXISTS course_50_plus;
 
 -- All courses that have 50 or more students(ASH)
 CREATE VIEW course_50_plus AS
@@ -32,23 +38,12 @@ GROUP BY c.courseCode, c.courseName
 ORDER BY totalStudents DESC
 LIMIT 10;
 
--- The top 10 students with the highest overall averages.(Jada-Marie)
--- CREATE VIEW top_ten_students AS --  WHICH ONE SHOULD WE KEEP
--- SELECT u.userID, u.fname, u.lname, AVG(e.grade) AS average
--- FROM UserAccount u
--- JOIN Enrol e ON u.userID = e.userID
--- GROUP BY u.userID, u.fname, u.lname
--- ORDER BY average DESC
--- LIMIT 10;
-
--- DROP VIEW top_ten_students;
-
-
-CREATE VIEW top_ten_students AS -- WHICH ONE SHOULD WE KEEP 
-SELECT ua.userID, ua.fname, ua.lname, AVG(s.grade) AS avg_grade
+-- The top 10 students with the highest course-grade averages.(Jada-Marie)
+CREATE VIEW top_ten_students AS
+SELECT ua.userID, ua.fname, ua.lname, AVG(e.grade) AS avg_grade
 FROM UserAccount ua
-JOIN Submission s ON ua.userID = s.userID
-WHERE ua.accessLvl = 'student' AND s.grade IS NOT NULL
+JOIN Enrol e ON ua.userID = e.userID
+WHERE ua.accessLvl = 'student' AND e.grade IS NOT NULL
 GROUP BY ua.userID, ua.fname, ua.lname
 ORDER BY avg_grade DESC
-LIMIT 10
+LIMIT 10;

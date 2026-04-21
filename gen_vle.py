@@ -1,918 +1,916 @@
-# """
-# VLE Database Population Script
-# Generates SQL INSERT statements for the Vle database.
-
-# Constraints met:
-#   - 100,000 students  (IDs: 620xxxxxxx)
-#   - 200 lecturers     (IDs: 200xxxxxxx)
-#   - 10  admins        (IDs: 111xxxxxxx)
-#   - 300 courses (safely over the 200 minimum)
-#   - Each student enrols in 3-6 courses
-#   - Each course has at least 10 student members
-#   - Each lecturer teaches 1-5 courses
-#   - Every lecturer teaches at least 1 course
-
-# Requirements:
-#     pip install faker
-
-# Output:
-#     vle_inserts.sql  (saved in the same folder as this script)
-# """
-
-# import random
-# import hashlib
-# import os
-# from faker import Faker
-
-# fake = Faker()
-# random.seed(42)
-# Faker.seed(42)
-
-# OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vle_insert.sql")
-
-# NUM_STUDENTS  = 100_000
-# NUM_LECTURERS = 200
-# NUM_ADMINS    = 10
-# NUM_COURSES   = 300
-# BATCH         = 500
-
-# def student_id(i):  return 620_000_000 + i
-# def lecturer_id(i): return 200_000_000 + i
-# def admin_id(i):    return 111_000_000 + i
-# def hash_pw(plain): return hashlib.sha256(plain.encode()).hexdigest()[:60]
-# def esc(s):         return str(s).replace("'", "`")
-
-# DEPARTMENTS = [
-#     "Computer Science","Mathematics","Physics","Chemistry","Biology",
-#     "Engineering","Economics","Management","Law","Medicine",
-#     "Psychology","Sociology","History","Literature","Philosophy",
-#     "Agriculture","Education","Nursing","Architecture","Accounting",
-# ]
-
-# COURSE_PREFIXES = {
-#     "Computer Science":"COMP","Mathematics":"MATH","Physics":"PHYS",
-#     "Chemistry":"CHEM","Biology":"BIOL","Engineering":"ENGR",
-#     "Economics":"ECON","Management":"MGMT","Law":"LAW0",
-#     "Medicine":"MEDI","Psychology":"PSYC","Sociology":"SOCI",
-#     "History":"HIST","Literature":"LITE","Philosophy":"PHIL",
-#     "Agriculture":"AGRI","Education":"EDUC","Nursing":"NURS",
-#     "Architecture":"ARCH","Accounting":"ACCT",
-# }
-
-# COURSE_TOPICS = {
-#     "Computer Science":["Intro to Programming","Data Structures","Algorithms","Operating Systems","Database Systems","Computer Networks","Software Engineering","Artificial Intelligence","Machine Learning","Cybersecurity","Web Development","Mobile Computing","Cloud Computing","Computer Graphics","Theory of Computation"],
-#     "Mathematics":["Calculus I","Calculus II","Linear Algebra","Discrete Mathematics","Probability and Statistics","Real Analysis","Abstract Algebra","Numerical Methods","Differential Equations","Topology","Number Theory","Graph Theory","Complex Analysis","Mathematical Modelling","Operations Research"],
-#     "Physics":["Mechanics","Electromagnetism","Thermodynamics","Quantum Physics","Optics","Nuclear Physics","Astrophysics","Condensed Matter","Fluid Dynamics","Acoustics","Relativity","Plasma Physics","Computational Physics","Experimental Methods","Particle Physics"],
-#     "Chemistry":["General Chemistry","Organic Chemistry","Inorganic Chemistry","Physical Chemistry","Analytical Chemistry","Biochemistry","Polymer Chemistry","Environmental Chemistry","Spectroscopy","Electrochemistry","Medicinal Chemistry","Computational Chemistry","Industrial Chemistry","Nanochemistry","Food Chemistry"],
-#     "Biology":["Cell Biology","Genetics","Ecology","Evolution","Microbiology","Zoology","Botany","Physiology","Immunology","Molecular Biology","Neuroscience","Marine Biology","Conservation Biology","Developmental Biology","Parasitology"],
-#     "Engineering":["Engineering Mathematics","Statics","Dynamics","Materials Science","Thermodynamics","Fluid Mechanics","Circuit Analysis","Control Systems","Signal Processing","Structural Analysis","Environmental Engineering","Geotechnical Engineering","Manufacturing Processes","Project Management","Engineering Ethics"],
-#     "Economics":["Microeconomics","Macroeconomics","Development Economics","International Economics","Public Finance","Econometrics","Labour Economics","Environmental Economics","Health Economics","Monetary Economics","Industrial Organisation","Behavioural Economics","Game Theory","Economic History","Financial Economics"],
-#     "Management":["Principles of Management","Organisational Behaviour","Marketing Management","Human Resource Management","Strategic Management","Operations Management","Entrepreneurship","Business Ethics","Innovation Management","Supply Chain Management","Project Management Adv","Change Management","Leadership","Corporate Governance","Risk Management"],
-#     "Law":["Constitutional Law","Contract Law","Criminal Law","Tort Law","Property Law","Administrative Law","International Law","Company Law","Human Rights Law","Family Law","Labour Law","Intellectual Property","Environmental Law","Tax Law","Procedure and Evidence"],
-#     "Medicine":["Anatomy","Physiology","Biochemistry","Pharmacology","Pathology","Microbiology","Community Health","Clinical Medicine","Surgery","Paediatrics","Obstetrics","Psychiatry","Radiology","Ophthalmology","Forensic Medicine"],
-#     "Psychology":["Introduction to Psychology","Cognitive Psychology","Social Psychology","Developmental Psychology","Abnormal Psychology","Personality Psychology","Biopsychology","Research Methods","Clinical Psychology","Health Psychology","Forensic Psychology","Educational Psychology","Organisational Psychology","Positive Psychology","Neuropsychology"],
-#     "Sociology":["Introduction to Sociology","Social Theory","Research Methods","Gender Studies","Race and Ethnicity","Urban Sociology","Rural Sociology","Criminology","Social Policy","Globalisation","Cultural Sociology","Medical Sociology","Political Sociology","Family Sociology","Environmental Sociology"],
-#     "History":["Ancient History","Medieval History","Modern History","Caribbean History","African History","World Wars","Colonial History","History of Science","Social History","Political History","Economic History","Historiography","Latin American History","Asian History","History of Religion"],
-#     "Literature":["Introduction to Literature","Poetry Analysis","Prose Fiction","Drama and Theatre","Caribbean Literature","African Literature","Postcolonial Literature","Literary Theory","Creative Writing","Comparative Literature","Childrens Literature","Film and Literature","Womens Writing","World Literature","Language and Linguistics"],
-#     "Philosophy":["Introduction to Philosophy","Logic","Ethics","Political Philosophy","Metaphysics","Epistemology","Philosophy of Mind","Philosophy of Science","Aesthetics","Philosophy of Language","Eastern Philosophy","Applied Ethics","Philosophy of Religion","Continental Philosophy","Analytic Philosophy"],
-#     "Agriculture":["Crop Science","Animal Science","Soil Science","Agricultural Economics","Agronomy","Horticulture","Pest Management","Agricultural Engineering","Irrigation Management","Food Science","Post Harvest Technology","Aquaculture","Agroforestry","Agricultural Extension","Sustainable Agriculture"],
-#     "Education":["Philosophy of Education","Curriculum Development","Educational Psychology","Assessment and Evaluation","Special Education","Early Childhood Education","STEM Education","ICT in Education","Literacy Education","Educational Leadership","Comparative Education","Adult Education","Guidance and Counselling","Sociology of Education","Teaching Practice"],
-#     "Nursing":["Fundamentals of Nursing","Anatomy for Nurses","Medical Surgical Nursing","Paediatric Nursing","Maternal and Child Health","Mental Health Nursing","Community Nursing","Pharmacology for Nurses","Critical Care Nursing","Nursing Research","Nursing Ethics","Geriatric Nursing","Oncology Nursing","Emergency Nursing","Nursing Leadership"],
-#     "Architecture":["Architectural Design","History of Architecture","Building Construction","Structural Systems","Environmental Design","Urban Planning","Landscape Architecture","Architectural Theory","Digital Design","Building Services","Housing Design","Heritage Conservation","Interior Architecture","Professional Practice","Building Information Modelling"],
-#     "Accounting":["Financial Accounting","Management Accounting","Auditing","Taxation","Cost Accounting","Financial Reporting","Accounting Information Systems","Corporate Finance","Forensic Accounting","Public Sector Accounting","International Accounting","Accounting Theory","Business Law for Accountants","Advanced Auditing","Financial Analysis"],
-# }
-
-# def write_inserts(f, table, cols, value_strings):
-#     col_str = ", ".join(cols)
-#     for b in range(0, len(value_strings), BATCH):
-#         chunk = value_strings[b : b + BATCH]
-#         f.write(f"INSERT INTO {table} ({col_str}) VALUES\n")
-#         f.write(",\n".join(chunk) + ";\n")
-
-# with open(OUTPUT_FILE, "w", encoding="utf-8") as OUT:
-
-#     OUT.write("-- ================================================================\n")
-#     OUT.write("-- VLE Database Population Script\n")
-#     OUT.write(f"-- Students:{NUM_STUDENTS:,}  Lecturers:{NUM_LECTURERS}  Courses:{NUM_COURSES}\n")
-#     OUT.write("-- Run your CREATE TABLE schema BEFORE this file.\n")
-#     OUT.write("-- Schema fix needed: SectionItems FK -> CourseSection(secID)\n")
-#     OUT.write("-- ================================================================\n\n")
-#     OUT.write("SET FOREIGN_KEY_CHECKS = 0;\n")
-#     OUT.write("SET UNIQUE_CHECKS = 0;\n")
-#     OUT.write("SET autocommit = 0;\n\n")
-
-#     # ── 1. UserAccount ────────────────────────────────────────────────────────
-#     print("Generating users...")
-#     used_emails      = set()
-#     lecturer_ids     = []
-#     student_ids_list = []
-#     user_rows        = []
-
-#     def make_email(fname, lname, tag=""):
-#         return f"{fname.lower()}.{lname.lower()}{tag}@vle.uwi.edu"
-
-#     for i in range(NUM_STUDENTS):
-#         uid   = student_id(i)
-#         fname = esc(fake.first_name())
-#         lname = esc(fake.last_name())
-#         email = make_email(fname, lname)
-#         tag   = 1
-#         while email in used_emails:
-#             email = make_email(fname, lname, str(tag)); tag += 1
-#         used_emails.add(email)
-#         pw = hash_pw(f"Student@{uid}")
-#         user_rows.append(f"({uid},'{fname}','{lname}','{email}','student','{pw}')")
-#         student_ids_list.append(uid)
-#         if (i+1) % 25000 == 0: print(f"  {i+1:,} students...")
-
-#     for i in range(NUM_LECTURERS):
-#         uid   = lecturer_id(i)
-#         fname = esc(fake.first_name())
-#         lname = esc(fake.last_name())
-#         email = make_email(fname, lname, f"_lec{i}")
-#         while email in used_emails:
-#             email = make_email(fname, lname, f"_lec{i}x")
-#         used_emails.add(email)
-#         pw = hash_pw(f"Lecturer@{uid}")
-#         user_rows.append(f"({uid},'{fname}','{lname}','{email}','lecturer','{pw}')")
-#         lecturer_ids.append(uid)
-
-#     for i in range(NUM_ADMINS):
-#         uid   = admin_id(i)
-#         fname = esc(fake.first_name())
-#         lname = esc(fake.last_name())
-#         email = make_email(fname, lname, f"_adm{i}")
-#         while email in used_emails:
-#             email = make_email(fname, lname, f"_adm{i}x")
-#         used_emails.add(email)
-#         pw = hash_pw(f"Admin@{uid}")
-#         user_rows.append(f"({uid},'{fname}','{lname}','{email}','admin','{pw}')")
-
-#     OUT.write("-- ── UserAccount ──────────────────────────────────────────────\n")
-#     write_inserts(OUT, "UserAccount",
-#                   ["userID","fname","lname","email","accessLvl","password"], user_rows)
-#     OUT.write("\n")
-#     print(f"  {len(user_rows):,} users written.")
-
-#     # ── 2. Course ─────────────────────────────────────────────────────────────
-#     print("Generating courses...")
-#     courses      = []
-#     course_codes = []
-#     counters     = {d: 1 for d in DEPARTMENTS}
-
-#     for dept, topics in COURSE_TOPICS.items():
-#         prefix = COURSE_PREFIXES[dept]
-#         for topic in topics:
-#             code = f"{prefix}{counters[dept]:04d}"[:8]
-#             courses.append((code, topic[:50], dept))
-#             course_codes.append(code)
-#             counters[dept] += 1
-
-#     course_rows = [f"('{cc}','{esc(cn)}','{dept}')" for cc,cn,dept in courses]
-#     OUT.write("-- ── Course ───────────────────────────────────────────────────\n")
-#     write_inserts(OUT, "Course", ["courseCode","courseName","department"], course_rows)
-#     OUT.write("\n")
-#     print(f"  {len(courses)} courses written.")
-
-#     # ── 3. Teaches + CourseMember (lecturers) ─────────────────────────────────
-#     print("Assigning lecturers to courses...")
-#     lec_load    = {lid: 0 for lid in lecturer_ids}
-#     lec_courses = {lid: [] for lid in lecturer_ids}
-#     course_lec  = {}
-
-#     shuffled_lec = lecturer_ids[:]
-#     random.shuffle(shuffled_lec)
-#     lec_ptr = 0
-
-#     for cc in course_codes:
-#         attempts = 0
-#         while True:
-#             lid = shuffled_lec[lec_ptr % len(shuffled_lec)]
-#             lec_ptr += 1
-#             if lec_load[lid] < 5:
-#                 lec_courses[lid].append(cc)
-#                 lec_load[lid] += 1
-#                 course_lec[cc] = lid
-#                 break
-#             attempts += 1
-#             if attempts > len(lecturer_ids) * 3:
-#                 lid = min(lec_load, key=lec_load.get)
-#                 lec_courses[lid].append(cc)
-#                 lec_load[lid] += 1
-#                 course_lec[cc] = lid
-#                 break
-
-#     for lid in lecturer_ids:
-#         if lec_load[lid] == 0:
-#             cc = random.choice(course_codes)
-#             lec_courses[lid].append(cc)
-#             lec_load[lid] += 1
-
-#     teaches_rows = []
-#     cm_lec_rows  = []
-#     for lid, ccs in lec_courses.items():
-#         for cc in ccs:
-#             teaches_rows.append(f"({lid},'{cc}')")
-#             cm_lec_rows.append(f"({lid},'lecturer','{cc}')")
-
-#     OUT.write("-- ── Teaches ──────────────────────────────────────────────────\n")
-#     write_inserts(OUT, "Teaches", ["userID","courseCode"], teaches_rows)
-#     OUT.write("\n")
-#     OUT.write("-- ── CourseMember (lecturers) ─────────────────────────────────\n")
-#     write_inserts(OUT, "CourseMember", ["userID","memberRole","courseCode"], cm_lec_rows)
-#     OUT.write("\n")
-#     print(f"  {len(teaches_rows)} teaching assignments.")
-
-#     # ── 4. Enrol + CourseMember (students) ────────────────────────────────────
-#     print("Enrolling students...")
-#     course_student_sets = {cc: set() for cc in course_codes}
-#     student_course_map  = {sid: set() for sid in student_ids_list}
-
-#     seed_ptr = 0
-#     for cc in course_codes:
-#         while len(course_student_sets[cc]) < 10:
-#             sid = student_ids_list[seed_ptr % NUM_STUDENTS]
-#             seed_ptr += 1
-#             if sid not in course_student_sets[cc]:
-#                 course_student_sets[cc].add(sid)
-#                 student_course_map[sid].add(cc)
-
-#     for idx, sid in enumerate(student_ids_list):
-#         current = student_course_map[sid]
-#         needed  = random.randint(3, 6) - len(current)
-#         if needed > 0:
-#             pool  = [cc for cc in course_codes if cc not in current]
-#             picks = random.sample(pool, min(needed, len(pool)))
-#             for cc in picks:
-#                 student_course_map[sid].add(cc)
-#                 course_student_sets[cc].add(sid)
-#         if (idx+1) % 25000 == 0: print(f"  {idx+1:,} students enrolled...")
-
-#     for sid in student_ids_list:
-#         if len(student_course_map[sid]) > 6:
-#             student_course_map[sid] = set(list(student_course_map[sid])[:6])
-
-#     enrol_rows  = []
-#     cm_stu_rows = []
-#     for sid, ccs in student_course_map.items():
-#         for cc in ccs:
-#             grade = random.randint(40, 100) if random.random() > 0.15 else "NULL"
-#             enrol_rows.append(f"({sid},'{cc}',{grade})")
-#             cm_stu_rows.append(f"({sid},'student','{cc}')")
-
-#     OUT.write("-- ── Enrol ────────────────────────────────────────────────────\n")
-#     write_inserts(OUT, "Enrol", ["userID","courseCode","grade"], enrol_rows)
-#     OUT.write("\n")
-#     OUT.write("-- ── CourseMember (students) ──────────────────────────────────\n")
-#     write_inserts(OUT, "CourseMember", ["userID","memberRole","courseCode"], cm_stu_rows)
-#     OUT.write("\n")
-#     print(f"  {len(enrol_rows):,} enrollments written.")
-
-#     # ── 5. DiscussionForum + DiscussionThread ─────────────────────────────────
-#     print("Generating forums and threads...")
-#     FORUM_NAMES   = ["General Discussion","Q and A","Assignment Help","Study Groups","Announcements","Debate Corner"]
-#     THREAD_TOPICS = ["Question","Help","Discussion","Feedback","Clarification","Resources","Review"]
-
-#     forums   = []
-#     threads  = []
-#     forum_id = 1
-#     thread_id= 1
-
-#     for cc in course_codes:
-#         members = list(course_student_sets[cc]) + [course_lec.get(cc)]
-#         members = [m for m in members if m is not None]
-#         for j in range(2):
-#             forums.append((forum_id, FORUM_NAMES[j % len(FORUM_NAMES)], cc))
-#             dfid = forum_id; forum_id += 1
-#             root_ids = []
-#             for _ in range(3):
-#                 uid   = random.choice(members)
-#                 body  = esc(fake.sentence(nb_words=random.randint(8,25))[:500])
-#                 topic = random.choice(THREAD_TOPICS)
-#                 dt    = fake.date_between(start_date="-2y", end_date="today")
-#                 threads.append((thread_id, dfid, None, uid, body, topic, dt))
-#                 root_ids.append(thread_id); thread_id += 1
-#             for rid in root_ids:
-#                 for _ in range(random.randint(1,3)):
-#                     uid  = random.choice(members)
-#                     body = esc(fake.sentence(nb_words=random.randint(5,15))[:500])
-#                     dt   = fake.date_between(start_date="-2y", end_date="today")
-#                     threads.append((thread_id, dfid, rid, uid, body, None, dt))
-#                     thread_id += 1
-
-#     forum_rows = [f"({fid},'{esc(fn)}','{cc}')" for fid,fn,cc in forums]
-#     OUT.write("-- ── DiscussionForum ──────────────────────────────────────────\n")
-#     write_inserts(OUT, "DiscussionForum", ["dfID","dfname","courseCode"], forum_rows)
-#     OUT.write("\n")
-
-#     thread_rows = []
-#     for d,df,pp,u,body,topic,dt in threads:
-#         pp_val    = str(pp) if pp is not None else "NULL"
-#         topic_val = f"'{topic}'" if topic is not None else "NULL"
-#         thread_rows.append(f"({d},{df},{pp_val},{u},'{body}',{topic_val},'{dt}')")
-
-#     OUT.write("-- ── DiscussionThread ─────────────────────────────────────────\n")
-#     write_inserts(OUT, "DiscussionThread",
-#                   ["dtID","dfID","parentpostID","userID","threadbody","topic","date_created"],
-#                   thread_rows)
-#     OUT.write("\n")
-#     print(f"  {len(forums)} forums | {len(threads):,} threads written.")
-
-#     # ── 6. CourseSection ──────────────────────────────────────────────────────
-#     print("Generating course sections...")
-#     SECTION_NAMES = ["Week 1 - Introduction","Week 2 - Core Concepts","Week 3 - Applications",
-#                      "Week 4 - Advanced Topics","Week 5 - Case Studies","Week 6 - Group Work",
-#                      "Midterm Review","Week 8","Week 9","Week 10",
-#                      "Week 11","Final Review","Assignments","Resources","Announcements"]
-
-#     sections          = []
-#     section_by_course = {}
-#     sec_id = 1
-
-#     for cc in course_codes:
-#         section_by_course[cc] = []
-#         names = random.sample(SECTION_NAMES, random.randint(5,10))
-#         for name in names:
-#             sections.append((sec_id, name, cc))
-#             section_by_course[cc].append(sec_id)
-#             sec_id += 1
-
-#     sec_rows = [f"({s},'{esc(n)}','{cc}')" for s,n,cc in sections]
-#     OUT.write("-- ── CourseSection ────────────────────────────────────────────\n")
-#     write_inserts(OUT, "CourseSection", ["secID","secname","courseCode"], sec_rows)
-#     OUT.write("\n")
-#     print(f"  {len(sections)} sections written.")
-
-#     # ── 7. SectionItems ───────────────────────────────────────────────────────
-#     print("Generating section items...")
-#     ITEM_TYPES  = ["assignment","links","files","slides"]
-#     ITEM_TITLES = ["Lecture Notes","Assignment {}","Reading Material","Tutorial Slides",
-#                    "Lab Sheet","Problem Set {}","Quiz {}","Project Guidelines",
-#                    "Reference Links","Supplementary Reading"]
-
-#     sec_items         = []
-#     secitem_by_course = {}
-#     sec_item_id = 1
-
-#     for cc in course_codes:
-#         secitem_by_course[cc] = []
-#         for sid_s in section_by_course[cc]:
-#             for k in range(random.randint(2,5)):
-#                 itype = random.choice(ITEM_TYPES)
-#                 title = random.choice(ITEM_TITLES).format(k+1)[:50]
-#                 body  = esc(fake.sentence(nb_words=15)[:500])
-#                 due   = fake.date_between(start_date="-1y", end_date="+6m") if itype=="assignment" else None
-#                 sec_items.append((sec_item_id, sid_s, title, body, itype, due))
-#                 if itype == "assignment":
-#                     secitem_by_course[cc].append(sec_item_id)
-#                 sec_item_id += 1
-
-#     si_rows = []
-#     for si,s,t,b2,it,d in sec_items:
-#         due_val = f"'{d}'" if d is not None else "NULL"
-#         si_rows.append(f"({si},{s},'{esc(t)}','{b2}','{it}',{due_val})")
-
-#     OUT.write("-- ── SectionItems ─────────────────────────────────────────────\n")
-#     write_inserts(OUT, "SectionItems",
-#                   ["secItemID","secID","title","secBody","itemtype","dueDate"], si_rows)
-#     OUT.write("\n")
-#     print(f"  {len(sec_items):,} section items written.")
-
-#     # ── 8. CourseCalendar + CalendarEvents ────────────────────────────────────
-#     print("Generating calendars and events...")
-#     EVENT_TITLES = ["Lecture","Tutorial","Lab Session","Office Hours","Quiz",
-#                     "Midterm Exam","Final Exam","Assignment Due","Project Submission",
-#                     "Guest Lecture","Study Group","Review Session","Workshop","Seminar"]
-
-#     calendars  = []
-#     cal_events = []
-#     cal_id   = 1
-#     event_id = 1
-
-#     for cc in course_codes:
-#         calendars.append((cal_id, cc))
-#         for _ in range(random.randint(8,15)):
-#             dt    = fake.date_between(start_date="-1y", end_date="+6m")
-#             title = random.choice(EVENT_TITLES)
-#             siid  = random.choice(secitem_by_course[cc]) if secitem_by_course[cc] and random.random()>0.5 else None
-#             cal_events.append((event_id, cal_id, dt, title, siid))
-#             event_id += 1
-#         cal_id += 1
-
-#     cal_rows = [f"({c},'{cc}')" for c,cc in calendars]
-#     OUT.write("-- ── CourseCalendar ───────────────────────────────────────────\n")
-#     write_inserts(OUT, "CourseCalendar", ["calenderID","courseCode"], cal_rows)
-#     OUT.write("\n")
-
-#     ev_rows = []
-#     for e,c,d,t,si in cal_events:
-#         si_val = str(si) if si is not None else "NULL"
-#         ev_rows.append(f"({e},{c},'{d}','{esc(t)}',{si_val})")
-
-#     OUT.write("-- ── CalendarEvents ───────────────────────────────────────────\n")
-#     write_inserts(OUT, "CalendarEvents",
-#                   ["eventID","calenderID","eventDate","eventTitle","secItemID"], ev_rows)
-#     OUT.write("\n")
-#     print(f"  {len(calendars)} calendars | {len(cal_events):,} events written.")
-
-#     # ── 9. Submission ─────────────────────────────────────────────────────────
-#     print("Generating submissions...")
-#     sub_rows = []
-#     sub_id   = 1
-
-#     for cc in course_codes:
-#         assignment_items = secitem_by_course[cc]
-#         if not assignment_items: continue
-#         sampled = random.sample(list(course_student_sets[cc]), min(30, len(course_student_sets[cc])))
-#         for sid in sampled:
-#             n = max(1, int(len(assignment_items) * random.uniform(0.5, 1.0)))
-#             for siid in random.sample(assignment_items, min(n, len(assignment_items))):
-#                 text  = esc(fake.sentence(nb_words=20)[:200])
-#                 dt    = fake.date_between(start_date="-1y", end_date="today")
-#                 grade = random.randint(40,100) if random.random() > 0.1 else "NULL"
-#                 sub_rows.append(f"({sub_id},{sid},{siid},'{text}',NULL,'{dt}',{grade})")
-#                 sub_id += 1
-
-#     OUT.write("-- ── Submission ───────────────────────────────────────────────\n")
-#     write_inserts(OUT, "Submission",
-#                   ["subID","userID","secItemID","subText","subContent","submDate","grade"],
-#                   sub_rows)
-#     OUT.write("\n")
-#     print(f"  {len(sub_rows):,} submissions written.")
-
-#     OUT.write("COMMIT;\n")
-#     OUT.write("SET FOREIGN_KEY_CHECKS = 1;\n")
-#     OUT.write("SET UNIQUE_CHECKS = 1;\n")
-#     OUT.write("SET autocommit = 1;\n")
-
-# size_mb = os.path.getsize(OUTPUT_FILE) / 1024 / 1024
-# print(f"\n✅  Done!  ->  {OUTPUT_FILE}")
-# print(f"    File size   : {size_mb:.1f} MB")
-# print(f"    Students    : {NUM_STUDENTS:,}")
-# print(f"    Lecturers   : {NUM_LECTURERS}")
-# print(f"    Admins      : {NUM_ADMINS}")
-# print(f"    Courses     : {len(courses)}")
-# print(f"    Enrollments : {len(enrol_rows):,}")
-# print(f"    Threads     : {len(threads):,}")
-# print(f"    Submissions : {len(sub_rows):,}")
-
-
 """
-VLE Database Population Script
-Generates SQL INSERT statements for the Vle database.
+Deterministic seed-data generator for the VLE database.
 
-Constraints met:
-  - 100,000 students  (IDs: 620xxxxxxx)
-  - 200 lecturers     (IDs: 200xxxxxxx)
-  - 10  admins        (IDs: 111xxxxxxx)
-  - 300 courses (safely over the 200 minimum)
-  - Each student enrols in 3-6 courses
-  - Each course has at least 10 student members
-  - Each lecturer teaches 1-5 courses
-  - Every lecturer teaches at least 1 course
+The generator targets the schema in vle.sql and writes:
+  - vle_inserts.sql
+  - demo_credentials.txt
 
-Requirements:
-    pip install faker
-
-Output:
-    vle_inserts.sql  (saved in the same folder as this script)
+It validates the generated dataset before writing SQL so coursework data
+constraints fail fast instead of producing a broken seed file.
 """
 
-import random
+from __future__ import annotations
+
+from collections import Counter, defaultdict
+from datetime import date
 import hashlib
 import os
+import random
+import re
+from typing import Any
+
 from faker import Faker
 
-fake = Faker()
-random.seed(42)
-Faker.seed(42)
 
-OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vle_inserts.sql")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_FILE = os.path.join(BASE_DIR, "vle_inserts.sql")
+DEMO_CREDENTIALS_FILE = os.path.join(BASE_DIR, "demo_credentials.txt")
 
-NUM_STUDENTS  = 100_000
+RANDOM_SEED = 42
+BATCH_SIZE = 500
+
+NUM_STUDENTS = 100_000
 NUM_LECTURERS = 200
-NUM_ADMINS    = 10
-NUM_COURSES   = 300
-BATCH         = 500
+NUM_ADMINS = 10
+NUM_COURSES = 300
 
-def student_id(i):  return 620_000_000 + i
-def lecturer_id(i): return 200_000_000 + i
-def admin_id(i):    return 111_000_000 + i
-def hash_pw(plain): return hashlib.sha256(plain.encode()).hexdigest()[:60]
-def esc(s):         return str(s).replace("'", "`")
+MIN_STUDENT_COURSES = 3
+MAX_STUDENT_COURSES = 6
+MIN_COURSE_STUDENTS = 10
+MIN_LECTURER_COURSES = 1
+MAX_LECTURER_COURSES = 5
+TARGET_LECTURERS_WITH_3_PLUS = 40
+
+STUDENT_START_ID = 620_000_000
+LECTURER_START_ID = 200_000_000
+ADMIN_START_ID = 111_000_000
+
+COURSE_CODE_RE = re.compile(r"^[A-Z0-9]{8}$")
+ITEM_TYPES = ("assignment", "link", "file", "slide")
+
+fake = Faker()
+
+
+# ---------------------------------------------------------------------------
+# Static course catalog inputs
+# ---------------------------------------------------------------------------
 
 DEPARTMENTS = [
-    "Computer Science","Mathematics","Physics","Chemistry","Biology",
-    "Engineering","Economics","Management","Law","Medicine",
-    "Psychology","Sociology","History","Literature","Philosophy",
-    "Agriculture","Education","Nursing","Architecture","Accounting",
+    "Computer Science", "Mathematics", "Physics", "Chemistry", "Biology",
+    "Engineering", "Economics", "Management", "Law", "Medicine",
+    "Psychology", "Sociology", "History", "Literature", "Philosophy",
+    "Agriculture", "Education", "Nursing", "Architecture", "Accounting",
 ]
 
 COURSE_PREFIXES = {
-    "Computer Science":"COMP","Mathematics":"MATH","Physics":"PHYS",
-    "Chemistry":"CHEM","Biology":"BIOL","Engineering":"ENGR",
-    "Economics":"ECON","Management":"MGMT","Law":"LAW0",
-    "Medicine":"MEDI","Psychology":"PSYC","Sociology":"SOCI",
-    "History":"HIST","Literature":"LITE","Philosophy":"PHIL",
-    "Agriculture":"AGRI","Education":"EDUC","Nursing":"NURS",
-    "Architecture":"ARCH","Accounting":"ACCT",
+    "Computer Science": "COMP", "Mathematics": "MATH", "Physics": "PHYS",
+    "Chemistry": "CHEM", "Biology": "BIOL", "Engineering": "ENGR",
+    "Economics": "ECON", "Management": "MGMT", "Law": "LAW0",
+    "Medicine": "MEDI", "Psychology": "PSYC", "Sociology": "SOCI",
+    "History": "HIST", "Literature": "LITE", "Philosophy": "PHIL",
+    "Agriculture": "AGRI", "Education": "EDUC", "Nursing": "NURS",
+    "Architecture": "ARCH", "Accounting": "ACCT",
 }
 
 COURSE_TOPICS = {
-    "Computer Science":["Intro to Programming","Data Structures","Algorithms","Operating Systems","Database Systems","Computer Networks","Software Engineering","Artificial Intelligence","Machine Learning","Cybersecurity","Web Development","Mobile Computing","Cloud Computing","Computer Graphics","Theory of Computation"],
-    "Mathematics":["Calculus I","Calculus II","Linear Algebra","Discrete Mathematics","Probability and Statistics","Real Analysis","Abstract Algebra","Numerical Methods","Differential Equations","Topology","Number Theory","Graph Theory","Complex Analysis","Mathematical Modelling","Operations Research"],
-    "Physics":["Mechanics","Electromagnetism","Thermodynamics","Quantum Physics","Optics","Nuclear Physics","Astrophysics","Condensed Matter","Fluid Dynamics","Acoustics","Relativity","Plasma Physics","Computational Physics","Experimental Methods","Particle Physics"],
-    "Chemistry":["General Chemistry","Organic Chemistry","Inorganic Chemistry","Physical Chemistry","Analytical Chemistry","Biochemistry","Polymer Chemistry","Environmental Chemistry","Spectroscopy","Electrochemistry","Medicinal Chemistry","Computational Chemistry","Industrial Chemistry","Nanochemistry","Food Chemistry"],
-    "Biology":["Cell Biology","Genetics","Ecology","Evolution","Microbiology","Zoology","Botany","Physiology","Immunology","Molecular Biology","Neuroscience","Marine Biology","Conservation Biology","Developmental Biology","Parasitology"],
-    "Engineering":["Engineering Mathematics","Statics","Dynamics","Materials Science","Thermodynamics","Fluid Mechanics","Circuit Analysis","Control Systems","Signal Processing","Structural Analysis","Environmental Engineering","Geotechnical Engineering","Manufacturing Processes","Project Management","Engineering Ethics"],
-    "Economics":["Microeconomics","Macroeconomics","Development Economics","International Economics","Public Finance","Econometrics","Labour Economics","Environmental Economics","Health Economics","Monetary Economics","Industrial Organisation","Behavioural Economics","Game Theory","Economic History","Financial Economics"],
-    "Management":["Principles of Management","Organisational Behaviour","Marketing Management","Human Resource Management","Strategic Management","Operations Management","Entrepreneurship","Business Ethics","Innovation Management","Supply Chain Management","Project Management Adv","Change Management","Leadership","Corporate Governance","Risk Management"],
-    "Law":["Constitutional Law","Contract Law","Criminal Law","Tort Law","Property Law","Administrative Law","International Law","Company Law","Human Rights Law","Family Law","Labour Law","Intellectual Property","Environmental Law","Tax Law","Procedure and Evidence"],
-    "Medicine":["Anatomy","Physiology","Biochemistry","Pharmacology","Pathology","Microbiology","Community Health","Clinical Medicine","Surgery","Paediatrics","Obstetrics","Psychiatry","Radiology","Ophthalmology","Forensic Medicine"],
-    "Psychology":["Introduction to Psychology","Cognitive Psychology","Social Psychology","Developmental Psychology","Abnormal Psychology","Personality Psychology","Biopsychology","Research Methods","Clinical Psychology","Health Psychology","Forensic Psychology","Educational Psychology","Organisational Psychology","Positive Psychology","Neuropsychology"],
-    "Sociology":["Introduction to Sociology","Social Theory","Research Methods","Gender Studies","Race and Ethnicity","Urban Sociology","Rural Sociology","Criminology","Social Policy","Globalisation","Cultural Sociology","Medical Sociology","Political Sociology","Family Sociology","Environmental Sociology"],
-    "History":["Ancient History","Medieval History","Modern History","Caribbean History","African History","World Wars","Colonial History","History of Science","Social History","Political History","Economic History","Historiography","Latin American History","Asian History","History of Religion"],
-    "Literature":["Introduction to Literature","Poetry Analysis","Prose Fiction","Drama and Theatre","Caribbean Literature","African Literature","Postcolonial Literature","Literary Theory","Creative Writing","Comparative Literature","Childrens Literature","Film and Literature","Womens Writing","World Literature","Language and Linguistics"],
-    "Philosophy":["Introduction to Philosophy","Logic","Ethics","Political Philosophy","Metaphysics","Epistemology","Philosophy of Mind","Philosophy of Science","Aesthetics","Philosophy of Language","Eastern Philosophy","Applied Ethics","Philosophy of Religion","Continental Philosophy","Analytic Philosophy"],
-    "Agriculture":["Crop Science","Animal Science","Soil Science","Agricultural Economics","Agronomy","Horticulture","Pest Management","Agricultural Engineering","Irrigation Management","Food Science","Post Harvest Technology","Aquaculture","Agroforestry","Agricultural Extension","Sustainable Agriculture"],
-    "Education":["Philosophy of Education","Curriculum Development","Educational Psychology","Assessment and Evaluation","Special Education","Early Childhood Education","STEM Education","ICT in Education","Literacy Education","Educational Leadership","Comparative Education","Adult Education","Guidance and Counselling","Sociology of Education","Teaching Practice"],
-    "Nursing":["Fundamentals of Nursing","Anatomy for Nurses","Medical Surgical Nursing","Paediatric Nursing","Maternal and Child Health","Mental Health Nursing","Community Nursing","Pharmacology for Nurses","Critical Care Nursing","Nursing Research","Nursing Ethics","Geriatric Nursing","Oncology Nursing","Emergency Nursing","Nursing Leadership"],
-    "Architecture":["Architectural Design","History of Architecture","Building Construction","Structural Systems","Environmental Design","Urban Planning","Landscape Architecture","Architectural Theory","Digital Design","Building Services","Housing Design","Heritage Conservation","Interior Architecture","Professional Practice","Building Information Modelling"],
-    "Accounting":["Financial Accounting","Management Accounting","Auditing","Taxation","Cost Accounting","Financial Reporting","Accounting Information Systems","Corporate Finance","Forensic Accounting","Public Sector Accounting","International Accounting","Accounting Theory","Business Law for Accountants","Advanced Auditing","Financial Analysis"],
+    "Computer Science": [
+        "Intro to Programming", "Data Structures", "Algorithms", "Operating Systems",
+        "Database Systems", "Computer Networks", "Software Engineering",
+        "Artificial Intelligence", "Machine Learning", "Cybersecurity",
+        "Web Development", "Mobile Computing", "Cloud Computing",
+        "Computer Graphics", "Theory of Computation",
+    ],
+    "Mathematics": [
+        "Calculus I", "Calculus II", "Linear Algebra", "Discrete Mathematics",
+        "Probability and Statistics", "Real Analysis", "Abstract Algebra",
+        "Numerical Methods", "Differential Equations", "Topology", "Number Theory",
+        "Graph Theory", "Complex Analysis", "Mathematical Modelling",
+        "Operations Research",
+    ],
+    "Physics": [
+        "Mechanics", "Electromagnetism", "Thermodynamics", "Quantum Physics",
+        "Optics", "Nuclear Physics", "Astrophysics", "Condensed Matter",
+        "Fluid Dynamics", "Acoustics", "Relativity", "Plasma Physics",
+        "Computational Physics", "Experimental Methods", "Particle Physics",
+    ],
+    "Chemistry": [
+        "General Chemistry", "Organic Chemistry", "Inorganic Chemistry",
+        "Physical Chemistry", "Analytical Chemistry", "Biochemistry",
+        "Polymer Chemistry", "Environmental Chemistry", "Spectroscopy",
+        "Electrochemistry", "Medicinal Chemistry", "Computational Chemistry",
+        "Industrial Chemistry", "Nanochemistry", "Food Chemistry",
+    ],
+    "Biology": [
+        "Cell Biology", "Genetics", "Ecology", "Evolution", "Microbiology",
+        "Zoology", "Botany", "Physiology", "Immunology", "Molecular Biology",
+        "Neuroscience", "Marine Biology", "Conservation Biology",
+        "Developmental Biology", "Parasitology",
+    ],
+    "Engineering": [
+        "Engineering Mathematics", "Statics", "Dynamics", "Materials Science",
+        "Thermodynamics", "Fluid Mechanics", "Circuit Analysis", "Control Systems",
+        "Signal Processing", "Structural Analysis", "Environmental Engineering",
+        "Geotechnical Engineering", "Manufacturing Processes", "Project Management",
+        "Engineering Ethics",
+    ],
+    "Economics": [
+        "Microeconomics", "Macroeconomics", "Development Economics",
+        "International Economics", "Public Finance", "Econometrics",
+        "Labour Economics", "Environmental Economics", "Health Economics",
+        "Monetary Economics", "Industrial Organisation", "Behavioural Economics",
+        "Game Theory", "Economic History", "Financial Economics",
+    ],
+    "Management": [
+        "Principles of Management", "Organisational Behaviour",
+        "Marketing Management", "Human Resource Management", "Strategic Management",
+        "Operations Management", "Entrepreneurship", "Business Ethics",
+        "Innovation Management", "Supply Chain Management", "Project Management Adv",
+        "Change Management", "Leadership", "Corporate Governance", "Risk Management",
+    ],
+    "Law": [
+        "Constitutional Law", "Contract Law", "Criminal Law", "Tort Law",
+        "Property Law", "Administrative Law", "International Law", "Company Law",
+        "Human Rights Law", "Family Law", "Labour Law", "Intellectual Property",
+        "Environmental Law", "Tax Law", "Procedure and Evidence",
+    ],
+    "Medicine": [
+        "Anatomy", "Physiology", "Biochemistry", "Pharmacology", "Pathology",
+        "Microbiology", "Community Health", "Clinical Medicine", "Surgery",
+        "Paediatrics", "Obstetrics", "Psychiatry", "Radiology", "Ophthalmology",
+        "Forensic Medicine",
+    ],
+    "Psychology": [
+        "Introduction to Psychology", "Cognitive Psychology", "Social Psychology",
+        "Developmental Psychology", "Abnormal Psychology", "Personality Psychology",
+        "Biopsychology", "Research Methods", "Clinical Psychology",
+        "Health Psychology", "Forensic Psychology", "Educational Psychology",
+        "Organisational Psychology", "Positive Psychology", "Neuropsychology",
+    ],
+    "Sociology": [
+        "Introduction to Sociology", "Social Theory", "Research Methods",
+        "Gender Studies", "Race and Ethnicity", "Urban Sociology", "Rural Sociology",
+        "Criminology", "Social Policy", "Globalisation", "Cultural Sociology",
+        "Medical Sociology", "Political Sociology", "Family Sociology",
+        "Environmental Sociology",
+    ],
+    "History": [
+        "Ancient History", "Medieval History", "Modern History", "Caribbean History",
+        "African History", "World Wars", "Colonial History", "History of Science",
+        "Social History", "Political History", "Economic History", "Historiography",
+        "Latin American History", "Asian History", "History of Religion",
+    ],
+    "Literature": [
+        "Introduction to Literature", "Poetry Analysis", "Prose Fiction",
+        "Drama and Theatre", "Caribbean Literature", "African Literature",
+        "Postcolonial Literature", "Literary Theory", "Creative Writing",
+        "Comparative Literature", "Childrens Literature", "Film and Literature",
+        "Womens Writing", "World Literature", "Language and Linguistics",
+    ],
+    "Philosophy": [
+        "Introduction to Philosophy", "Logic", "Ethics", "Political Philosophy",
+        "Metaphysics", "Epistemology", "Philosophy of Mind", "Philosophy of Science",
+        "Aesthetics", "Philosophy of Language", "Eastern Philosophy", "Applied Ethics",
+        "Philosophy of Religion", "Continental Philosophy", "Analytic Philosophy",
+    ],
+    "Agriculture": [
+        "Crop Science", "Animal Science", "Soil Science", "Agricultural Economics",
+        "Agronomy", "Horticulture", "Pest Management", "Agricultural Engineering",
+        "Irrigation Management", "Food Science", "Post Harvest Technology",
+        "Aquaculture", "Agroforestry", "Agricultural Extension",
+        "Sustainable Agriculture",
+    ],
+    "Education": [
+        "Philosophy of Education", "Curriculum Development", "Educational Psychology",
+        "Assessment and Evaluation", "Special Education", "Early Childhood Education",
+        "STEM Education", "ICT in Education", "Literacy Education",
+        "Educational Leadership", "Comparative Education", "Adult Education",
+        "Guidance and Counselling", "Sociology of Education", "Teaching Practice",
+    ],
+    "Nursing": [
+        "Fundamentals of Nursing", "Anatomy for Nurses", "Medical Surgical Nursing",
+        "Paediatric Nursing", "Maternal and Child Health", "Mental Health Nursing",
+        "Community Nursing", "Pharmacology for Nurses", "Critical Care Nursing",
+        "Nursing Research", "Nursing Ethics", "Geriatric Nursing", "Oncology Nursing",
+        "Emergency Nursing", "Nursing Leadership",
+    ],
+    "Architecture": [
+        "Architectural Design", "History of Architecture", "Building Construction",
+        "Structural Systems", "Environmental Design", "Urban Planning",
+        "Landscape Architecture", "Architectural Theory", "Digital Design",
+        "Building Services", "Housing Design", "Heritage Conservation",
+        "Interior Architecture", "Professional Practice", "Building Information Modelling",
+    ],
+    "Accounting": [
+        "Financial Accounting", "Management Accounting", "Auditing", "Taxation",
+        "Cost Accounting", "Financial Reporting", "Accounting Information Systems",
+        "Corporate Finance", "Forensic Accounting", "Public Sector Accounting",
+        "International Accounting", "Accounting Theory", "Business Law for Accountants",
+        "Advanced Auditing", "Financial Analysis",
+    ],
 }
 
-def write_inserts(f, table, cols, value_strings):
-    col_str = ", ".join(cols)
-    for b in range(0, len(value_strings), BATCH):
-        chunk = value_strings[b : b + BATCH]
-        f.write(f"INSERT INTO {table} ({col_str}) VALUES\n")
-        f.write(",\n".join(chunk) + ";\n")
 
-with open(OUTPUT_FILE, "w", encoding="utf-8") as OUT:
+# ---------------------------------------------------------------------------
+# Small formatting helpers
+# ---------------------------------------------------------------------------
 
-    OUT.write("-- ================================================================\n")
-    OUT.write("-- VLE Database Population Script\n")
-    OUT.write(f"-- Students:{NUM_STUDENTS:,}  Lecturers:{NUM_LECTURERS}  Courses:{NUM_COURSES}\n")
-    OUT.write("-- Run your CREATE TABLE schema BEFORE this file.\n")
-    OUT.write("-- Schema fix needed: SectionItems FK -> CourseSection(secID)\n")
-    OUT.write("-- ================================================================\n\n")
-    OUT.write("SET FOREIGN_KEY_CHECKS = 0;\n")
-    OUT.write("SET UNIQUE_CHECKS = 0;\n")
-    OUT.write("SET autocommit = 0;\n\n")
+def student_id(index: int) -> int:
+    """Return the deterministic student userID for a zero-based index."""
+    return STUDENT_START_ID + index
 
-    # ── 1. UserAccount ────────────────────────────────────────────────────────
+
+def lecturer_id(index: int) -> int:
+    """Return the deterministic lecturer userID for a zero-based index."""
+    return LECTURER_START_ID + index
+
+
+def admin_id(index: int) -> int:
+    """Return the deterministic admin userID for a zero-based index."""
+    return ADMIN_START_ID + index
+
+
+def hash_pw(plain: str) -> str:
+    """Return the full SHA-256 password hash stored in UserAccount."""
+    return hashlib.sha256(plain.encode()).hexdigest()
+
+
+def clean_text(value: Any, max_len: int) -> str:
+    """Flatten generated text so SQL inserts stay one row per value."""
+    return str(value).replace("\r", " ").replace("\n", " ")[:max_len]
+
+
+def make_email(fname: str, lname: str, used_emails: set[str], suffix: str = "") -> str:
+    """Create a unique synthetic VLE email address."""
+    base = f"{fname.lower()}.{lname.lower()}{suffix}".replace("'", "")
+    email = f"{base}@vle.uwi.edu"
+    counter = 1
+    while email in used_emails:
+        email = f"{base}{counter}@vle.uwi.edu"
+        counter += 1
+    used_emails.add(email)
+    return email
+
+
+def sql_value(value: Any) -> str:
+    """Convert a Python value into a MySQL literal for the seed file."""
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, date):
+        return f"'{value.isoformat()}'"
+    text = str(value).replace("\\", "\\\\").replace("'", "''")
+    return f"'{text}'"
+
+
+def write_insert_batches(handle, table: str, columns: list[str], rows: list[tuple[Any, ...]]) -> None:
+    """Write rows as batched INSERT statements to keep the SQL file loadable."""
+    column_sql = ", ".join(columns)
+    for start in range(0, len(rows), BATCH_SIZE):
+        batch = rows[start : start + BATCH_SIZE]
+        values = [
+            "(" + ",".join(sql_value(value) for value in row) + ")"
+            for row in batch
+        ]
+        handle.write(f"INSERT INTO {table} ({column_sql}) VALUES\n")
+        handle.write(",\n".join(values))
+        handle.write(";\n")
+
+
+# ---------------------------------------------------------------------------
+# Dataset generation phases
+# ---------------------------------------------------------------------------
+
+def generate_users() -> dict[str, Any]:
+    """Generate students, lecturers, admins, hashes, and demo plaintext lookup."""
     print("Generating users...")
-    used_emails      = set()
-    lecturer_ids     = []
-    student_ids_list = []
-    user_rows        = []
+    used_emails: set[str] = set()
+    users: list[tuple[Any, ...]] = []
+    user_lookup: dict[int, dict[str, Any]] = {}
 
-    def make_email(fname, lname, tag=""):
-        return f"{fname.lower()}.{lname.lower()}{tag}@vle.uwi.edu"
+    def add_user(user_id: int, access_lvl: str, password: str, suffix: str = "") -> None:
+        fname = clean_text(fake.first_name(), 50)
+        lname = clean_text(fake.last_name(), 50)
+        email = make_email(fname, lname, used_emails, suffix)
+        users.append((user_id, fname, lname, email, access_lvl, hash_pw(password)))
+        user_lookup[user_id] = {
+            "userID": user_id,
+            "fname": fname,
+            "lname": lname,
+            "email": email,
+            "accessLvl": access_lvl,
+            "password": password,
+        }
 
-    for i in range(NUM_STUDENTS):
-        uid   = student_id(i)
-        fname = esc(fake.first_name())
-        lname = esc(fake.last_name())
-        email = make_email(fname, lname)
-        tag   = 1
-        while email in used_emails:
-            email = make_email(fname, lname, str(tag)); tag += 1
-        used_emails.add(email)
-        pw = hash_pw(f"Student@{uid}")
-        user_rows.append(f"({uid},'{fname}','{lname}','{email}','student','{pw}')")
-        student_ids_list.append(uid)
-        if (i+1) % 25000 == 0: print(f"  {i+1:,} students...")
+    for index in range(NUM_STUDENTS):
+        uid = student_id(index)
+        add_user(uid, "student", f"Student@{uid}")
+        if (index + 1) % 25_000 == 0:
+            print(f"  {index + 1:,} students...")
 
-    for i in range(NUM_LECTURERS):
-        uid   = lecturer_id(i)
-        fname = esc(fake.first_name())
-        lname = esc(fake.last_name())
-        email = make_email(fname, lname, f"_lec{i}")
-        while email in used_emails:
-            email = make_email(fname, lname, f"_lec{i}x")
-        used_emails.add(email)
-        pw = hash_pw(f"Lecturer@{uid}")
-        user_rows.append(f"({uid},'{fname}','{lname}','{email}','lecturer','{pw}')")
-        lecturer_ids.append(uid)
+    for index in range(NUM_LECTURERS):
+        uid = lecturer_id(index)
+        add_user(uid, "lecturer", f"Lecturer@{uid}", f"_lec{index}")
 
-    for i in range(NUM_ADMINS):
-        uid   = admin_id(i)
-        fname = esc(fake.first_name())
-        lname = esc(fake.last_name())
-        email = make_email(fname, lname, f"_adm{i}")
-        while email in used_emails:
-            email = make_email(fname, lname, f"_adm{i}x")
-        used_emails.add(email)
-        pw = hash_pw(f"Admin@{uid}")
-        user_rows.append(f"({uid},'{fname}','{lname}','{email}','admin','{pw}')")
+    for index in range(NUM_ADMINS):
+        uid = admin_id(index)
+        add_user(uid, "admin", f"Admin@{uid}", f"_adm{index}")
 
-    OUT.write("-- ── UserAccount ──────────────────────────────────────────────\n")
-    write_inserts(OUT, "UserAccount",
-                  ["userID","fname","lname","email","accessLvl","password"], user_rows)
-    OUT.write("\n")
-    print(f"  {len(user_rows):,} users written.")
+    return {
+        "users": users,
+        "user_lookup": user_lookup,
+        "student_ids": [student_id(index) for index in range(NUM_STUDENTS)],
+        "lecturer_ids": [lecturer_id(index) for index in range(NUM_LECTURERS)],
+        "admin_ids": [admin_id(index) for index in range(NUM_ADMINS)],
+    }
 
-    # ── 2. Course ─────────────────────────────────────────────────────────────
+
+def generate_courses() -> dict[str, Any]:
+    """Generate the fixed course catalog with valid 8-character course codes."""
     print("Generating courses...")
-    courses      = []
-    course_codes = []
-    counters     = {d: 1 for d in DEPARTMENTS}
+    courses: list[tuple[Any, ...]] = []
+    counters = {department: 1 for department in DEPARTMENTS}
 
-    for dept, topics in COURSE_TOPICS.items():
-        prefix = COURSE_PREFIXES[dept]
-        for topic in topics:
-            code = f"{prefix}{counters[dept]:04d}"[:8]
-            # Prefix with dept code to guarantee globally unique course names
-            unique_name = f"{prefix} {topic}"[:50]
-            courses.append((code, unique_name, dept))
-            course_codes.append(code)
-            counters[dept] += 1
+    for department in DEPARTMENTS:
+        prefix = COURSE_PREFIXES[department]
+        for topic in COURSE_TOPICS[department]:
+            code = f"{prefix}{counters[department]:04d}"[:8]
+            name = clean_text(f"{prefix} {topic}", 50)
+            courses.append((code, name, department))
+            counters[department] += 1
 
-    course_rows = [f"(\'{cc}\',\'{esc(cn)}\',\'{dept}\')" for cc,cn,dept in courses]
-    OUT.write("-- ── Course ───────────────────────────────────────────────────\n")
-    write_inserts(OUT, "Course", ["courseCode","courseName","department"], course_rows)
-    OUT.write("\n")
-    print(f"  {len(courses)} courses written.")
+    if len(courses) != NUM_COURSES:
+        raise ValueError(f"Expected {NUM_COURSES} courses, generated {len(courses)}")
 
-    # ── 3. Teaches + CourseMember (lecturers) ─────────────────────────────────
+    return {
+        "courses": courses,
+        "course_codes": [course[0] for course in courses],
+    }
+
+
+def assign_lecturers(lecturer_ids: list[int], course_codes: list[str]) -> dict[str, Any]:
+    """Assign exactly one lecturer per course while keeping each lecturer at 1-5 courses."""
     print("Assigning lecturers to courses...")
-    lec_load    = {lid: 0 for lid in lecturer_ids}
-    lec_courses = {lid: [] for lid in lecturer_ids}
-    course_lec  = {}
+    shuffled_lecturers = lecturer_ids[:]
+    shuffled_courses = course_codes[:]
+    random.shuffle(shuffled_lecturers)
+    random.shuffle(shuffled_courses)
 
-    shuffled_lec = lecturer_ids[:]
-    random.shuffle(shuffled_lec)
-    lec_ptr = 0
+    lecturer_courses = {lecturer: [] for lecturer in lecturer_ids}
+    course_lecturer: dict[str, int] = {}
+    unassigned_courses = shuffled_courses[:]
 
-    for cc in course_codes:
-        attempts = 0
-        while True:
-            lid = shuffled_lec[lec_ptr % len(shuffled_lec)]
-            lec_ptr += 1
-            if lec_load[lid] < 5:
-                lec_courses[lid].append(cc)
-                lec_load[lid] += 1
-                course_lec[cc] = lid
-                break
-            attempts += 1
-            if attempts > len(lecturer_ids) * 3:
-                lid = min(lec_load, key=lec_load.get)
-                lec_courses[lid].append(cc)
-                lec_load[lid] += 1
-                course_lec[cc] = lid
-                break
+    def assign(lecturer: int, course: str) -> None:
+        lecturer_courses[lecturer].append(course)
+        course_lecturer[course] = lecturer
 
-    for lid in lecturer_ids:
-        if lec_load[lid] == 0:
-            cc = random.choice(course_codes)
-            lec_courses[lid].append(cc)
-            lec_load[lid] += 1
+    # First pass guarantees every lecturer teaches at least one course.
+    for lecturer in shuffled_lecturers:
+        assign(lecturer, unassigned_courses.pop())
 
-    teaches_rows = []
-    cm_lec_rows  = []
-    for lid, ccs in lec_courses.items():
-        for cc in ccs:
-            teaches_rows.append(f"({lid},'{cc}')")
-            cm_lec_rows.append(f"({lid},'lecturer','{cc}')")
+    # Some lecturers intentionally teach 3+ courses so the lecturer report has data.
+    heavy_count = min(TARGET_LECTURERS_WITH_3_PLUS, len(unassigned_courses) // 2)
+    for lecturer in random.sample(shuffled_lecturers, heavy_count):
+        while unassigned_courses and len(lecturer_courses[lecturer]) < 3:
+            assign(lecturer, unassigned_courses.pop())
 
-    OUT.write("-- ── Teaches ──────────────────────────────────────────────────\n")
-    write_inserts(OUT, "Teaches", ["userID","courseCode"], teaches_rows)
-    OUT.write("\n")
-    OUT.write("-- ── CourseMember (lecturers) ─────────────────────────────────\n")
-    write_inserts(OUT, "CourseMember", ["userID","memberRole","courseCode"], cm_lec_rows)
-    OUT.write("\n")
-    print(f"  {len(teaches_rows)} teaching assignments.")
+    for course in unassigned_courses:
+        candidates = [
+            lecturer for lecturer in lecturer_ids
+            if len(lecturer_courses[lecturer]) < MAX_LECTURER_COURSES
+        ]
+        if not candidates:
+            raise ValueError("No lecturer has capacity for remaining course assignment")
+        lightest_load = min(len(lecturer_courses[lecturer]) for lecturer in candidates)
+        lightest = [
+            lecturer for lecturer in candidates
+            if len(lecturer_courses[lecturer]) == lightest_load
+        ]
+        assign(random.choice(lightest), course)
 
-    # ── 4. Enrol + CourseMember (students) ────────────────────────────────────
+    teaches = [
+        (course_lecturer[course_code], course_code)
+        for course_code in course_codes
+    ]
+
+    return {
+        "teaches": teaches,
+        "lecturer_courses": lecturer_courses,
+        "course_lecturer": course_lecturer,
+    }
+
+
+def enroll_students(student_ids: list[int], course_codes: list[str]) -> dict[str, Any]:
+    """Assign 3-6 courses per student and repair courses below the member minimum."""
     print("Enrolling students...")
-    course_student_sets = {cc: set() for cc in course_codes}
-    student_course_map  = {sid: set() for sid in student_ids_list}
+    student_courses: dict[int, set[str]] = {}
 
-    seed_ptr = 0
-    for cc in course_codes:
-        while len(course_student_sets[cc]) < 10:
-            sid = student_ids_list[seed_ptr % NUM_STUDENTS]
-            seed_ptr += 1
-            if sid not in course_student_sets[cc]:
-                course_student_sets[cc].add(sid)
-                student_course_map[sid].add(cc)
+    for index, sid in enumerate(student_ids):
+        target_count = random.randint(MIN_STUDENT_COURSES, MAX_STUDENT_COURSES)
+        student_courses[sid] = set(random.sample(course_codes, target_count))
+        if (index + 1) % 25_000 == 0:
+            print(f"  {index + 1:,} students enrolled...")
 
-    for idx, sid in enumerate(student_ids_list):
-        current = student_course_map[sid]
-        needed  = random.randint(3, 6) - len(current)
-        if needed > 0:
-            pool  = [cc for cc in course_codes if cc not in current]
-            picks = random.sample(pool, min(needed, len(pool)))
-            for cc in picks:
-                student_course_map[sid].add(cc)
-                course_student_sets[cc].add(sid)
-        if (idx+1) % 25000 == 0: print(f"  {idx+1:,} students enrolled...")
+    course_students: dict[str, set[int]] = {course: set() for course in course_codes}
+    for sid, courses in student_courses.items():
+        for course in courses:
+            course_students[course].add(sid)
 
-    for sid in student_ids_list:
-        if len(student_course_map[sid]) > 6:
-            student_course_map[sid] = set(list(student_course_map[sid])[:6])
+    for course in course_codes:
+        while len(course_students[course]) < MIN_COURSE_STUDENTS:
+            candidates = [
+                sid for sid in student_ids
+                if course not in student_courses[sid]
+                and len(student_courses[sid]) < MAX_STUDENT_COURSES
+            ]
+            if not candidates:
+                raise ValueError(f"Cannot repair enrollment count for {course}")
+            sid = random.choice(candidates)
+            student_courses[sid].add(course)
+            course_students[course].add(sid)
 
-    enrol_rows  = []
-    cm_stu_rows = []
-    for sid, ccs in student_course_map.items():
-        for cc in ccs:
-            grade = random.randint(40, 100) if random.random() > 0.15 else "NULL"
-            enrol_rows.append(f"({sid},'{cc}',{grade})")
-            cm_stu_rows.append(f"({sid},'student','{cc}')")
+    enrol_pairs = sorted(
+        (sid, course)
+        for sid, courses in student_courses.items()
+        for course in courses
+    )
 
-    OUT.write("-- ── Enrol ────────────────────────────────────────────────────\n")
-    write_inserts(OUT, "Enrol", ["userID","courseCode","grade"], enrol_rows)
-    OUT.write("\n")
-    OUT.write("-- ── CourseMember (students) ──────────────────────────────────\n")
-    write_inserts(OUT, "CourseMember", ["userID","memberRole","courseCode"], cm_stu_rows)
-    OUT.write("\n")
-    print(f"  {len(enrol_rows):,} enrollments written.")
+    print(f"  {len(enrol_pairs):,} enrollments prepared.")
+    return {
+        "student_courses": student_courses,
+        "course_students": course_students,
+        "enrol_pairs": enrol_pairs,
+    }
 
-    # ── 5. DiscussionForum + DiscussionThread ─────────────────────────────────
+
+def generate_forums_and_threads(
+    course_codes: list[str],
+    course_students: dict[str, set[int]],
+    course_lecturer: dict[str, int],
+) -> dict[str, Any]:
+    """Generate two forums per course with top-level posts and simple replies."""
     print("Generating forums and threads...")
-    FORUM_NAMES   = ["General Discussion","Q and A","Assignment Help","Study Groups","Announcements","Debate Corner"]
-    THREAD_TOPICS = ["Question","Help","Discussion","Feedback","Clarification","Resources","Review"]
-
-    forums   = []
-    threads  = []
+    forum_names = ["General Discussion", "Q and A"]
+    thread_topics = ["Question", "Help", "Discussion", "Feedback", "Clarification", "Resources", "Review"]
+    forums: list[tuple[Any, ...]] = []
+    threads: list[tuple[Any, ...]] = []
     forum_id = 1
-    thread_id= 1
+    thread_id = 1
 
-    for cc in course_codes:
-        members = list(course_student_sets[cc]) + [course_lec.get(cc)]
-        members = [m for m in members if m is not None]
-        for j in range(2):
-            forums.append((forum_id, FORUM_NAMES[j % len(FORUM_NAMES)], cc))
-            dfid = forum_id; forum_id += 1
-            root_ids = []
+    for course in course_codes:
+        members = list(course_students[course]) + [course_lecturer[course]]
+        for forum_name in forum_names:
+            forums.append((forum_id, forum_name, course))
+            root_ids: list[int] = []
             for _ in range(3):
-                uid   = random.choice(members)
-                body  = esc(fake.sentence(nb_words=random.randint(8,25))[:500])
-                topic = random.choice(THREAD_TOPICS)
-                dt    = fake.date_between(start_date="-2y", end_date="today")
-                threads.append((thread_id, dfid, None, uid, body, topic, dt))
-                root_ids.append(thread_id); thread_id += 1
-            for rid in root_ids:
-                for _ in range(random.randint(1,3)):
-                    uid  = random.choice(members)
-                    body = esc(fake.sentence(nb_words=random.randint(5,15))[:500])
-                    dt   = fake.date_between(start_date="-2y", end_date="today")
-                    threads.append((thread_id, dfid, rid, uid, body, None, dt))
+                body = clean_text(fake.sentence(nb_words=random.randint(8, 25)), 500)
+                topic = random.choice(thread_topics)
+                created = fake.date_between(start_date="-2y", end_date="today")
+                user_id = random.choice(members)
+                threads.append((thread_id, forum_id, None, user_id, body, topic, created))
+                root_ids.append(thread_id)
+                thread_id += 1
+
+            for root_id in root_ids:
+                for _ in range(random.randint(1, 3)):
+                    body = clean_text(fake.sentence(nb_words=random.randint(5, 15)), 500)
+                    created = fake.date_between(start_date="-2y", end_date="today")
+                    user_id = random.choice(members)
+                    threads.append((thread_id, forum_id, root_id, user_id, body, None, created))
                     thread_id += 1
+            forum_id += 1
 
-    forum_rows = [f"({fid},'{esc(fn)}','{cc}')" for fid,fn,cc in forums]
-    OUT.write("-- ── DiscussionForum ──────────────────────────────────────────\n")
-    write_inserts(OUT, "DiscussionForum", ["dfID","dfname","courseCode"], forum_rows)
-    OUT.write("\n")
+    return {"forums": forums, "threads": threads}
 
-    thread_rows = []
-    for d,df,pp,u,body,topic,dt in threads:
-        pp_val    = str(pp) if pp is not None else "NULL"
-        topic_val = f"'{topic}'" if topic is not None else "NULL"
-        thread_rows.append(f"({d},{df},{pp_val},{u},'{body}',{topic_val},'{dt}')")
 
-    OUT.write("-- ── DiscussionThread ─────────────────────────────────────────\n")
-    write_inserts(OUT, "DiscussionThread",
-                  ["dtID","dfID","parentpostID","userID","threadbody","topic","date_created"],
-                  thread_rows)
-    OUT.write("\n")
-    print(f"  {len(forums)} forums | {len(threads):,} threads written.")
+def generate_sections_and_items(course_codes: list[str]) -> dict[str, Any]:
+    """Generate content sections and assignment/link/file/slide metadata items."""
+    print("Generating sections and section items...")
+    section_names = [
+        "Week 1 - Introduction", "Week 2 - Core Concepts", "Week 3 - Applications",
+        "Week 4 - Advanced Topics", "Week 5 - Case Studies", "Week 6 - Group Work",
+        "Midterm Review", "Week 8", "Week 9", "Week 10", "Week 11",
+        "Final Review", "Assignments", "Resources", "Announcements",
+    ]
+    item_titles = [
+        "Lecture Notes", "Assignment {}", "Reading Material", "Tutorial Slides",
+        "Lab Sheet", "Problem Set {}", "Quiz {}", "Project Guidelines",
+        "Reference Links", "Supplementary Reading",
+    ]
 
-    # ── 6. CourseSection ──────────────────────────────────────────────────────
-    print("Generating course sections...")
-    SECTION_NAMES = ["Week 1 - Introduction","Week 2 - Core Concepts","Week 3 - Applications",
-                     "Week 4 - Advanced Topics","Week 5 - Case Studies","Week 6 - Group Work",
-                     "Midterm Review","Week 8","Week 9","Week 10",
-                     "Week 11","Final Review","Assignments","Resources","Announcements"]
+    sections: list[tuple[Any, ...]] = []
+    section_by_course: dict[str, list[int]] = {}
+    section_course: dict[int, str] = {}
+    section_items: list[tuple[Any, ...]] = []
+    assignment_items_by_course: dict[str, list[int]] = {course: [] for course in course_codes}
 
-    sections          = []
-    section_by_course = {}
-    sec_id = 1
+    section_id = 1
+    item_id = 1
 
-    for cc in course_codes:
-        section_by_course[cc] = []
-        names = random.sample(SECTION_NAMES, random.randint(5,10))
-        for name in names:
-            sections.append((sec_id, name, cc))
-            section_by_course[cc].append(sec_id)
-            sec_id += 1
+    for course in course_codes:
+        section_by_course[course] = []
+        for name in random.sample(section_names, random.randint(5, 10)):
+            sections.append((section_id, name, course))
+            section_by_course[course].append(section_id)
+            section_course[section_id] = course
 
-    sec_rows = [f"({s},'{esc(n)}','{cc}')" for s,n,cc in sections]
-    OUT.write("-- ── CourseSection ────────────────────────────────────────────\n")
-    write_inserts(OUT, "CourseSection", ["secID","secname","courseCode"], sec_rows)
-    OUT.write("\n")
-    print(f"  {len(sections)} sections written.")
+            for item_index in range(random.randint(2, 5)):
+                item_type = random.choice(ITEM_TYPES)
+                title = clean_text(random.choice(item_titles).format(item_index + 1), 50)
+                body = clean_text(fake.sentence(nb_words=15), 500)
+                if item_type == "link":
+                    content = f"https://resources.vle.local/{course.lower()}/item-{item_id}"
+                elif item_type == "file":
+                    content = f"files/{course.lower()}/resource-{item_id}.pdf"
+                elif item_type == "slide":
+                    content = f"slides/{course.lower()}/deck-{item_id}.pdf"
+                else:
+                    content = clean_text(fake.sentence(nb_words=12), 1000)
+                due_date = fake.date_between(start_date="-1y", end_date="+6m") if item_type == "assignment" else None
 
-    # ── 7. SectionItems ───────────────────────────────────────────────────────
-    print("Generating section items...")
-    ITEM_TYPES  = ["assignment","links","files","slides"]
-    ITEM_TITLES = ["Lecture Notes","Assignment {}","Reading Material","Tutorial Slides",
-                   "Lab Sheet","Problem Set {}","Quiz {}","Project Guidelines",
-                   "Reference Links","Supplementary Reading"]
+                section_items.append((item_id, section_id, title, body, content, item_type, due_date))
+                if item_type == "assignment":
+                    assignment_items_by_course[course].append(item_id)
+                item_id += 1
+            section_id += 1
 
-    sec_items         = []
-    secitem_by_course = {}
-    sec_item_id = 1
+    return {
+        "sections": sections,
+        "section_items": section_items,
+        "section_by_course": section_by_course,
+        "section_course": section_course,
+        "assignment_items_by_course": assignment_items_by_course,
+    }
 
-    for cc in course_codes:
-        secitem_by_course[cc] = []
-        for sid_s in section_by_course[cc]:
-            for k in range(random.randint(2,5)):
-                itype = random.choice(ITEM_TYPES)
-                title = random.choice(ITEM_TITLES).format(k+1)[:50]
-                body  = esc(fake.sentence(nb_words=15)[:500])
-                due   = fake.date_between(start_date="-1y", end_date="+6m") if itype=="assignment" else None
-                sec_items.append((sec_item_id, sid_s, title, body, itype, due))
-                if itype == "assignment":
-                    secitem_by_course[cc].append(sec_item_id)
-                sec_item_id += 1
 
-    si_rows = []
-    for si,s,t,b2,it,d in sec_items:
-        due_val = f"'{d}'" if d is not None else "NULL"
-        si_rows.append(f"({si},{s},'{esc(t)}','{b2}','{it}',{due_val})")
-
-    OUT.write("-- ── SectionItems ─────────────────────────────────────────────\n")
-    write_inserts(OUT, "SectionItems",
-                  ["secItemID","secID","title","secBody","itemtype","dueDate"], si_rows)
-    OUT.write("\n")
-    print(f"  {len(sec_items):,} section items written.")
-
-    # ── 8. CourseCalendar + CalendarEvents ────────────────────────────────────
+def generate_calendars_and_events(
+    course_codes: list[str],
+    assignment_items_by_course: dict[str, list[int]],
+) -> dict[str, Any]:
+    """Generate one course calendar per course plus general and item-linked events."""
     print("Generating calendars and events...")
-    EVENT_TITLES = ["Lecture","Tutorial","Lab Session","Office Hours","Quiz",
-                    "Midterm Exam","Final Exam","Assignment Due","Project Submission",
-                    "Guest Lecture","Study Group","Review Session","Workshop","Seminar"]
+    event_titles = [
+        "Lecture", "Tutorial", "Lab Session", "Office Hours", "Quiz",
+        "Midterm Exam", "Final Exam", "Assignment Due", "Project Submission",
+        "Guest Lecture", "Study Group", "Review Session", "Workshop", "Seminar",
+    ]
 
-    calendars  = []
-    cal_events = []
-    cal_id   = 1
+    calendars: list[tuple[Any, ...]] = []
+    calendar_by_course: dict[str, int] = {}
+    events: list[tuple[Any, ...]] = []
+    calendar_id = 1
     event_id = 1
 
-    for cc in course_codes:
-        calendars.append((cal_id, cc))
-        for _ in range(random.randint(8,15)):
-            dt    = fake.date_between(start_date="-1y", end_date="+6m")
-            title = random.choice(EVENT_TITLES)
-            siid  = random.choice(secitem_by_course[cc]) if secitem_by_course[cc] and random.random()>0.5 else None
-            cal_events.append((event_id, cal_id, dt, title, siid))
+    for course in course_codes:
+        calendars.append((calendar_id, course))
+        calendar_by_course[course] = calendar_id
+        for _ in range(random.randint(8, 15)):
+            event_date = fake.date_between(start_date="-1y", end_date="+6m")
+            title = random.choice(event_titles)
+            assignment_items = assignment_items_by_course[course]
+            section_item_id = random.choice(assignment_items) if assignment_items and random.random() > 0.5 else None
+            events.append((event_id, calendar_id, event_date, title, section_item_id))
             event_id += 1
-        cal_id += 1
+        calendar_id += 1
 
-    cal_rows = [f"({c},'{cc}')" for c,cc in calendars]
-    OUT.write("-- ── CourseCalendar ───────────────────────────────────────────\n")
-    write_inserts(OUT, "CourseCalendar", ["calenderID","courseCode"], cal_rows)
-    OUT.write("\n")
+    return {
+        "calendars": calendars,
+        "calendar_by_course": calendar_by_course,
+        "calendar_events": events,
+    }
 
-    ev_rows = []
-    for e,c,d,t,si in cal_events:
-        si_val = str(si) if si is not None else "NULL"
-        ev_rows.append(f"({e},{c},'{d}','{esc(t)}',{si_val})")
 
-    OUT.write("-- ── CalendarEvents ───────────────────────────────────────────\n")
-    write_inserts(OUT, "CalendarEvents",
-                  ["eventID","calenderID","eventDate","eventTitle","secItemID"], ev_rows)
-    OUT.write("\n")
-    print(f"  {len(calendars)} calendars | {len(cal_events):,} events written.")
+def generate_submissions_and_course_grades(
+    course_codes: list[str],
+    course_students: dict[str, set[int]],
+    assignment_items_by_course: dict[str, list[int]],
+    enrol_pairs: list[tuple[int, str]],
+) -> dict[str, Any]:
+    """Generate assignment submissions and derive Enrol.grade from graded submissions."""
+    print("Generating submissions and course grades...")
+    submissions: list[tuple[Any, ...]] = []
+    course_grade_scores: dict[tuple[int, str], list[int]] = defaultdict(list)
+    submission_id = 1
 
-    # ── 9. Submission ─────────────────────────────────────────────────────────
-    print("Generating submissions...")
-    sub_rows = []
-    sub_id   = 1
+    for course in course_codes:
+        assignment_items = assignment_items_by_course[course]
+        if not assignment_items:
+            continue
+        sampled_students = random.sample(
+            sorted(course_students[course]),
+            min(30, len(course_students[course])),
+        )
+        for sid in sampled_students:
+            submission_count = max(1, int(len(assignment_items) * random.uniform(0.5, 1.0)))
+            chosen_items = random.sample(assignment_items, min(submission_count, len(assignment_items)))
+            for section_item_id in chosen_items:
+                text = clean_text(fake.sentence(nb_words=20), 200)
+                submitted_at = fake.date_between(start_date="-1y", end_date="today")
+                grade = random.randint(40, 100) if random.random() > 0.1 else None
+                if grade is not None:
+                    course_grade_scores[(sid, course)].append(grade)
+                submissions.append((submission_id, sid, section_item_id, text, None, submitted_at, grade))
+                submission_id += 1
 
-    for cc in course_codes:
-        assignment_items = secitem_by_course[cc]
-        if not assignment_items: continue
-        sampled = random.sample(list(course_student_sets[cc]), min(30, len(course_student_sets[cc])))
-        for sid in sampled:
-            n = max(1, int(len(assignment_items) * random.uniform(0.5, 1.0)))
-            for siid in random.sample(assignment_items, min(n, len(assignment_items))):
-                text  = esc(fake.sentence(nb_words=20)[:200])
-                dt    = fake.date_between(start_date="-1y", end_date="today")
-                grade = random.randint(40,100) if random.random() > 0.1 else "NULL"
-                sub_rows.append(f"({sub_id},{sid},{siid},'{text}',NULL,'{dt}',{grade})")
-                sub_id += 1
+    enrol_rows: list[tuple[Any, ...]] = []
+    for sid, course in enrol_pairs:
+        grades = course_grade_scores.get((sid, course), [])
+        course_grade = int((sum(grades) / len(grades)) + 0.5) if grades else None
+        enrol_rows.append((sid, course, course_grade))
 
-    OUT.write("-- ── Submission ───────────────────────────────────────────────\n")
-    write_inserts(OUT, "Submission",
-                  ["subID","userID","secItemID","subText","subContent","submDate","grade"],
-                  sub_rows)
-    OUT.write("\n")
-    print(f"  {len(sub_rows):,} submissions written.")
+    return {
+        "submissions": submissions,
+        "enrol_rows": enrol_rows,
+        "course_grade_scores": course_grade_scores,
+    }
 
-    OUT.write("COMMIT;\n")
-    OUT.write("SET FOREIGN_KEY_CHECKS = 1;\n")
-    OUT.write("SET UNIQUE_CHECKS = 1;\n")
-    OUT.write("SET autocommit = 1;\n")
 
-size_mb = os.path.getsize(OUTPUT_FILE) / 1024 / 1024
-print(f"\n✅  Done!  ->  {OUTPUT_FILE}")
-print(f"    File size   : {size_mb:.1f} MB")
-print(f"    Students    : {NUM_STUDENTS:,}")
-print(f"    Lecturers   : {NUM_LECTURERS}")
-print(f"    Admins      : {NUM_ADMINS}")
-print(f"    Courses     : {len(courses)}")
-print(f"    Enrollments : {len(enrol_rows):,}")
-print(f"    Threads     : {len(threads):,}")
-print(f"    Submissions : {len(sub_rows):,}")
+# ---------------------------------------------------------------------------
+# Validation and output
+# ---------------------------------------------------------------------------
+
+def ensure_unique(values: list[Any], label: str) -> None:
+    """Raise a clear validation error when generated key-like values repeat."""
+    counts = Counter(values)
+    duplicates = [value for value, count in counts.items() if count > 1]
+    if duplicates:
+        raise ValueError(f"Duplicate {label}: {duplicates[:5]}")
+
+
+def validate_dataset(data: dict[str, Any]) -> None:
+    """Validate coursework constraints and foreign-key consistency before writing SQL."""
+    print("Validating generated dataset...")
+    users = data["users"]
+    courses = data["courses"]
+    course_codes = data["course_codes"]
+    student_ids = set(data["student_ids"])
+    lecturer_ids = set(data["lecturer_ids"])
+    admin_ids = set(data["admin_ids"])
+    student_courses = data["student_courses"]
+    course_students = data["course_students"]
+    lecturer_courses = data["lecturer_courses"]
+    course_lecturer = data["course_lecturer"]
+    teaches = data["teaches"]
+    sections = data["sections"]
+    section_items = data["section_items"]
+    calendars = data["calendars"]
+    calendar_events = data["calendar_events"]
+    submissions = data["submissions"]
+    enrol_rows = data["enrol_rows"]
+    course_grade_scores = data["course_grade_scores"]
+
+    role_counts = Counter(row[4] for row in users)
+    if role_counts["student"] != NUM_STUDENTS:
+        raise ValueError(f"Expected {NUM_STUDENTS} students, found {role_counts['student']}")
+    if role_counts["lecturer"] != NUM_LECTURERS:
+        raise ValueError(f"Expected {NUM_LECTURERS} lecturers, found {role_counts['lecturer']}")
+    if role_counts["admin"] != NUM_ADMINS:
+        raise ValueError(f"Expected {NUM_ADMINS} admins, found {role_counts['admin']}")
+    if len(courses) < 200:
+        raise ValueError("At least 200 courses are required")
+
+    user_ids = [row[0] for row in users]
+    ensure_unique(user_ids, "userID")
+    ensure_unique([row[3] for row in users], "email")
+    ensure_unique(course_codes, "courseCode")
+    ensure_unique([row[1] for row in courses], "courseName")
+
+    if any(not COURSE_CODE_RE.fullmatch(course_code) for course_code in course_codes):
+        raise ValueError("All course codes must be exactly 8 uppercase alphanumeric characters")
+
+    for sid in student_ids:
+        count = len(student_courses[sid])
+        if not MIN_STUDENT_COURSES <= count <= MAX_STUDENT_COURSES:
+            raise ValueError(f"Student {sid} has {count} courses")
+
+    for course in course_codes:
+        if len(course_students[course]) < MIN_COURSE_STUDENTS:
+            raise ValueError(f"Course {course} has fewer than {MIN_COURSE_STUDENTS} students")
+        if course not in course_lecturer:
+            raise ValueError(f"Course {course} has no lecturer")
+
+    for lecturer in lecturer_ids:
+        count = len(lecturer_courses[lecturer])
+        if not MIN_LECTURER_COURSES <= count <= MAX_LECTURER_COURSES:
+            raise ValueError(f"Lecturer {lecturer} has {count} courses")
+
+    ensure_unique([row[1] for row in teaches], "Teaches.courseCode")
+    if sum(1 for courses_for_lecturer in lecturer_courses.values() if len(courses_for_lecturer) >= 3) == 0:
+        raise ValueError("At least one lecturer must teach 3+ courses for reporting")
+
+    section_ids = {row[0] for row in sections}
+    section_item_ids = {row[0] for row in section_items}
+    calendar_ids = {row[0] for row in calendars}
+    ensure_unique(list(section_ids), "secID")
+    ensure_unique(list(section_item_ids), "secItemID")
+    ensure_unique(list(calendar_ids), "calendarID")
+    ensure_unique([row[0] for row in calendar_events], "eventID")
+    ensure_unique([row[0] for row in submissions], "subID")
+
+    for _, section_id, _, _, _, item_type, due_date in section_items:
+        if section_id not in section_ids:
+            raise ValueError(f"Section item references missing section {section_id}")
+        if item_type not in ITEM_TYPES:
+            raise ValueError(f"Invalid item type {item_type}")
+        if item_type != "assignment" and due_date is not None:
+            raise ValueError("Only assignment section items may have due dates")
+
+    for _, calendar_id, _, _, section_item_id in calendar_events:
+        if calendar_id not in calendar_ids:
+            raise ValueError(f"Calendar event references missing calendar {calendar_id}")
+        if section_item_id is not None and section_item_id not in section_item_ids:
+            raise ValueError(f"Calendar event references missing section item {section_item_id}")
+
+    assignment_item_ids = {row[0] for row in section_items if row[5] == "assignment"}
+    for _, sid, section_item_id, _, _, _, grade in submissions:
+        if sid not in student_ids:
+            raise ValueError(f"Submission references non-student user {sid}")
+        if section_item_id not in assignment_item_ids:
+            raise ValueError(f"Submission references non-assignment item {section_item_id}")
+        if grade is not None and not 0 <= grade <= 100:
+            raise ValueError(f"Invalid submission grade {grade}")
+
+    enrol_lookup = {(row[0], row[1]): row[2] for row in enrol_rows}
+    if len(enrol_lookup) != len(enrol_rows):
+        raise ValueError("Duplicate Enrol rows generated")
+    for sid, course in enrol_lookup:
+        if sid not in student_ids:
+            raise ValueError(f"Enrollment references non-student user {sid}")
+        if course not in course_codes:
+            raise ValueError(f"Enrollment references missing course {course}")
+        grades = course_grade_scores.get((sid, course), [])
+        expected = int((sum(grades) / len(grades)) + 0.5) if grades else None
+        if enrol_lookup[(sid, course)] != expected:
+            raise ValueError(f"Enrollment grade mismatch for {sid}/{course}")
+        if expected is not None and not 0 <= expected <= 100:
+            raise ValueError(f"Invalid enrollment grade {expected}")
+
+
+def build_dataset() -> dict[str, Any]:
+    """Run all generation phases and merge their outputs into one dataset dict."""
+    user_data = generate_users()
+    course_data = generate_courses()
+    teaching_data = assign_lecturers(user_data["lecturer_ids"], course_data["course_codes"])
+    enrollment_data = enroll_students(user_data["student_ids"], course_data["course_codes"])
+    discussion_data = generate_forums_and_threads(
+        course_data["course_codes"],
+        enrollment_data["course_students"],
+        teaching_data["course_lecturer"],
+    )
+    section_data = generate_sections_and_items(course_data["course_codes"])
+    calendar_data = generate_calendars_and_events(
+        course_data["course_codes"],
+        section_data["assignment_items_by_course"],
+    )
+    submission_data = generate_submissions_and_course_grades(
+        course_data["course_codes"],
+        enrollment_data["course_students"],
+        section_data["assignment_items_by_course"],
+        enrollment_data["enrol_pairs"],
+    )
+
+    data: dict[str, Any] = {}
+    for chunk in (
+        user_data,
+        course_data,
+        teaching_data,
+        enrollment_data,
+        discussion_data,
+        section_data,
+        calendar_data,
+        submission_data,
+    ):
+        data.update(chunk)
+    return data
+
+
+def write_sql(data: dict[str, Any]) -> None:
+    """Overwrite vle_inserts.sql with INSERT statements for real tables only."""
+    print(f"Writing {OUTPUT_FILE}...")
+    with open(OUTPUT_FILE, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("-- ================================================================\n")
+        handle.write("-- VLE Database Population Script\n")
+        handle.write(f"-- Students:{NUM_STUDENTS:,}  Lecturers:{NUM_LECTURERS}  Courses:{NUM_COURSES}\n")
+        handle.write("-- Run vle.sql before this file.\n")
+        handle.write("-- CourseMember is a view derived from Enrol and Teaches.\n")
+        handle.write("-- ================================================================\n\n")
+        handle.write("SET FOREIGN_KEY_CHECKS = 0;\n")
+        handle.write("SET UNIQUE_CHECKS = 0;\n")
+        handle.write("SET autocommit = 0;\n\n")
+
+        sections = [
+            ("UserAccount", ["userID", "fname", "lname", "email", "accessLvl", "password"], data["users"]),
+            ("Course", ["courseCode", "courseName", "department"], data["courses"]),
+            ("Teaches", ["userID", "courseCode"], data["teaches"]),
+            ("DiscussionForum", ["dfID", "dfname", "courseCode"], data["forums"]),
+            (
+                "DiscussionThread",
+                ["dtID", "dfID", "parentpostID", "userID", "threadbody", "topic", "date_created"],
+                data["threads"],
+            ),
+            ("CourseSection", ["secID", "secName", "courseCode"], data["sections"]),
+            (
+                "SectionItems",
+                ["secItemID", "secID", "title", "secBody", "secContent", "itemtype", "dueDate"],
+                data["section_items"],
+            ),
+            ("CourseCalendar", ["calendarID", "courseCode"], data["calendars"]),
+            (
+                "CalendarEvents",
+                ["eventID", "calendarID", "eventDate", "eventTitle", "secItemID"],
+                data["calendar_events"],
+            ),
+            ("Enrol", ["userID", "courseCode", "grade"], data["enrol_rows"]),
+            (
+                "Submission",
+                ["subID", "userID", "secItemID", "subText", "subContent", "submDate", "grade"],
+                data["submissions"],
+            ),
+        ]
+
+        for table, columns, rows in sections:
+            handle.write(f"-- {table}\n")
+            write_insert_batches(handle, table, columns, rows)
+            handle.write("\n")
+
+        handle.write("COMMIT;\n")
+        handle.write("SET FOREIGN_KEY_CHECKS = 1;\n")
+        handle.write("SET UNIQUE_CHECKS = 1;\n")
+        handle.write("SET autocommit = 1;\n")
+
+
+def write_demo_credentials(data: dict[str, Any]) -> None:
+    """Write known synthetic credentials for one seed student, lecturer, and admin."""
+    print(f"Writing {DEMO_CREDENTIALS_FILE}...")
+    user_lookup = data["user_lookup"]
+    demo_users = [
+        ("Student", STUDENT_START_ID),
+        ("Lecturer", LECTURER_START_ID),
+        ("Admin", ADMIN_START_ID),
+    ]
+
+    lines = [
+        "Seed-data demo credentials only",
+        "",
+        "These are synthetic accounts from vle_inserts.sql for local Postman/demo testing.",
+        "Do not use this file for real user credentials.",
+        "",
+        "New accounts created through POST /users/register return their generated password once.",
+        "Those runtime plaintext passwords are not stored in UserAccount and cannot be queried later.",
+        "",
+    ]
+
+    for label, user_id in demo_users:
+        user = user_lookup[user_id]
+        lines.extend([
+            label,
+            f"userID: {user['userID']}",
+            f"name: {user['fname']} {user['lname']}",
+            f"email: {user['email']}",
+            f"password: {user['password']}",
+            "",
+        ])
+
+    with open(DEMO_CREDENTIALS_FILE, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(lines).rstrip() + "\n")
+
+
+def print_summary(data: dict[str, Any]) -> None:
+    """Print a short generation summary for the teammate running the script."""
+    size_mb = os.path.getsize(OUTPUT_FILE) / 1024 / 1024
+    lecturer_loads = [len(courses) for courses in data["lecturer_courses"].values()]
+    student_loads = [len(courses) for courses in data["student_courses"].values()]
+    course_student_counts = [len(students) for students in data["course_students"].values()]
+
+    print(f"\nDone -> {OUTPUT_FILE}")
+    print(f"    File size       : {size_mb:.1f} MB")
+    print(f"    Students        : {NUM_STUDENTS:,}")
+    print(f"    Lecturers       : {NUM_LECTURERS}")
+    print(f"    Admins          : {NUM_ADMINS}")
+    print(f"    Courses         : {len(data['courses'])}")
+    print(f"    Enrollments     : {len(data['enrol_rows']):,}")
+    print(f"    Forums          : {len(data['forums']):,}")
+    print(f"    Threads         : {len(data['threads']):,}")
+    print(f"    Section items   : {len(data['section_items']):,}")
+    print(f"    Calendar events : {len(data['calendar_events']):,}")
+    print(f"    Submissions     : {len(data['submissions']):,}")
+    print(f"    Student load    : {min(student_loads)}-{max(student_loads)} courses")
+    print(f"    Course students : {min(course_student_counts)}-{max(course_student_counts)} students")
+    print(f"    Lecturer load   : {min(lecturer_loads)}-{max(lecturer_loads)} courses")
+
+
+def main() -> None:
+    """Entrypoint used when running python gen_vle.py."""
+    random.seed(RANDOM_SEED)
+    Faker.seed(RANDOM_SEED)
+    data = build_dataset()
+    validate_dataset(data)
+    write_sql(data)
+    write_demo_credentials(data)
+    print_summary(data)
+
+
+if __name__ == "__main__":
+    main()

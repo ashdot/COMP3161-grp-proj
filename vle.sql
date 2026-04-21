@@ -17,22 +17,14 @@ CREATE TABLE UserAccount(
 CREATE TABLE Course(
     courseCode VARCHAR(8) PRIMARY KEY,
     courseName VARCHAR(50) NOT NULL UNIQUE,
-    department VARCHAR(50) NOT NULL
-);
-
--- Course Membership (students/roles)
-CREATE TABLE CourseMember(
-    userID INT NOT NULL,
-    memberRole ENUM('student','lecturer') NOT NULL,
-    courseCode VARCHAR(8) NOT NULL,
-    FOREIGN KEY (userID) REFERENCES UserAccount(userID) ON DELETE CASCADE,
-    FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE,
-    PRIMARY KEY (userID, courseCode) -- ensures no duplicates
+    department VARCHAR(50) NOT NULL,
+    CHECK (CHAR_LENGTH(courseCode) = 8),
+    CHECK (courseCode REGEXP '^[A-Z0-9]{8}$')
 );
 
 -- Discussion Forums
 CREATE TABLE DiscussionForum(
-    dfID INT PRIMARY KEY,
+    dfID INT PRIMARY KEY AUTO_INCREMENT,
     dfname VARCHAR(50) NOT NULL,
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
@@ -54,7 +46,7 @@ CREATE TABLE DiscussionThread(
 
 -- Sections
 CREATE TABLE CourseSection(
-    secID INT PRIMARY KEY ,
+    secID INT PRIMARY KEY AUTO_INCREMENT,
     secName VARCHAR(50) NOT NULL,
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
@@ -66,16 +58,16 @@ CREATE TABLE SectionItems(
     secID INT NOT NULL,
     title VARCHAR(50),
     secBody VARCHAR(500),
-    secContent LONGBLOB, -- Use a fake docment generator 
-    itemtype VARCHAR(15), -- assignment, links, files, slides
+    secContent TEXT,
+    itemtype ENUM('assignment', 'link', 'file', 'slide') NOT NULL,
     dueDate DATE,
     FOREIGN KEY (secID) REFERENCES CourseSection(secID) ON DELETE CASCADE
 );
 
 -- Course Calendar
 CREATE TABLE CourseCalendar(
-    calendarID INT PRIMARY KEY,   -- calendarID rename 
-    courseCode VARCHAR(8) NOT NULL,
+    calendarID INT PRIMARY KEY AUTO_INCREMENT,   -- calendarID rename
+    courseCode VARCHAR(8) NOT NULL UNIQUE,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE
 );
 
@@ -86,7 +78,8 @@ CREATE TABLE CalendarEvents(
     eventDate DATE,
     eventTitle VARCHAR(50),
     secItemID INT,
-    FOREIGN KEY (calendarID) REFERENCES CourseCalendar(calendarID) ON DELETE CASCADE
+    FOREIGN KEY (calendarID) REFERENCES CourseCalendar(calendarID) ON DELETE CASCADE,
+    FOREIGN KEY (secItemID) REFERENCES SectionItems(secItemID) ON DELETE CASCADE
 );
 
 -- Submissions
@@ -95,11 +88,12 @@ CREATE TABLE Submission(
     userID INT NOT NULL,
     secItemID INT NOT NULL,
     subText VARCHAR(200),
-    subContent LONGBLOB,-- Use a fake document generator 
+    subContent TEXT, -- Text/metadata submission content; real file upload is out of scope
     submDate DATE,
     grade INT,
     FOREIGN KEY (userID) REFERENCES UserAccount(userID) ON DELETE CASCADE,
-    FOREIGN KEY (secItemID) REFERENCES SectionItems(secItemID) ON DELETE CASCADE
+    FOREIGN KEY (secItemID) REFERENCES SectionItems(secItemID) ON DELETE CASCADE,
+    CHECK (grade IS NULL OR grade BETWEEN 0 AND 100)
 );
 
 -- Enrollment
@@ -109,7 +103,8 @@ CREATE TABLE Enrol(
     grade INT,
     FOREIGN KEY (userID) REFERENCES UserAccount(userID) ON DELETE CASCADE,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE,
-    PRIMARY KEY (userID, courseCode) 
+    PRIMARY KEY (userID, courseCode),
+    CHECK (grade IS NULL OR grade BETWEEN 0 AND 100)
 );
 
 -- Teaching Assignment
@@ -118,5 +113,43 @@ CREATE TABLE Teaches(
     courseCode VARCHAR(8) NOT NULL,
     FOREIGN KEY (userID) REFERENCES UserAccount(userID) ON DELETE CASCADE,
     FOREIGN KEY (courseCode) REFERENCES Course(courseCode) ON DELETE CASCADE,
-    PRIMARY KEY (userID, courseCode)
+    PRIMARY KEY (userID, courseCode),
+    UNIQUE (courseCode)
 );
+
+-- Calendar Event Views
+CREATE VIEW course_calendar_events AS
+SELECT
+    c.courseCode,
+    c.courseName,
+    ce.eventID,
+    ce.calendarID,
+    ce.eventDate,
+    ce.eventTitle,
+    ce.secItemID
+FROM Course c
+JOIN CourseCalendar cc ON c.courseCode = cc.courseCode
+JOIN CalendarEvents ce ON cc.calendarID = ce.calendarID;
+
+CREATE VIEW student_calendar_events AS
+SELECT
+    e.userID,
+    c.courseCode,
+    c.courseName,
+    ce.eventID,
+    ce.calendarID,
+    ce.eventDate,
+    ce.eventTitle,
+    ce.secItemID
+FROM Enrol e
+JOIN Course c ON e.courseCode = c.courseCode
+JOIN CourseCalendar cc ON c.courseCode = cc.courseCode
+JOIN CalendarEvents ce ON cc.calendarID = ce.calendarID;
+
+-- Course Membership View (derived from enrollment and teaching assignments)
+CREATE VIEW CourseMember AS
+SELECT userID, 'student' AS memberRole, courseCode
+FROM Enrol
+UNION ALL
+SELECT userID, 'lecturer' AS memberRole, courseCode
+FROM Teaches;
