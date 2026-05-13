@@ -1,0 +1,542 @@
+{
+  "info": {
+    "_postman_id": "beefd4db-738a-446b-879b-927e941be4b1",
+    "name": "Vle Project",
+    "description": "For the COMP3161 Final Project",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52800006",
+    "_collection_link": "https://go.postman.co/collection/52800006-beefd4db-738a-446b-879b-927e941be4b1?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Retrieve All Courses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/courses",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "courses"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve Student Courses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/students/620000000/courses",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "students",
+            "620000000",
+            "courses"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": null,
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve Lecturer Courses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/lecturers/200000000/courses",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "lecturers",
+            "200000000",
+            "courses"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve Course Members",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/courses/CHEM0011/members",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "courses",
+            "CHEM0011",
+            "members"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve Student Grades",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve Student Course Grades",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/students/620002500/ARCH0015/grades",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "students",
+            "620002500",
+            "ARCH0015",
+            "grades"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve Course Forums",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/courses/CHEM0011/forums",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "courses",
+            "CHEM0011",
+            "forums"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Retrieve Course Forums",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hostname}}/courses/CHEM0011/forums",
+              "host": [
+                "{{hostname}}"
+              ],
+              "path": [
+                "courses",
+                "CHEM0011",
+                "forums"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Werkzeug/3.1.8 Python/3.14.2"
+            },
+            {
+              "key": "Date",
+              "value": "Sat, 11 Apr 2026 22:16:03 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "114"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            }
+          ],
+          "cookie": [],
+          "body": "[\n    {\n        \"dfID\": 111,\n        \"dfname\": \"General Discussion\"\n    },\n    {\n        \"dfID\": 112,\n        \"dfname\": \"Q and A\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Retrieve Threads",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Retrieve Calender Events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/courses/CHEM0011/calendar-events",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "courses",
+            "CHEM0011",
+            "calendar-events"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Retrieve Calender Events",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hostname}}/courses/CHEM0011/calendar-events",
+              "host": [
+                "{{hostname}}"
+              ],
+              "path": [
+                "courses",
+                "CHEM0011",
+                "calendar-events"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Werkzeug/3.1.8 Python/3.14.2"
+            },
+            {
+              "key": "Date",
+              "value": "Sat, 11 Apr 2026 22:21:07 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "1093"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            }
+          ],
+          "cookie": [],
+          "body": "[\n    {\n        \"eventDate\": \"Fri, 18 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Office Hours\"\n    },\n    {\n        \"eventDate\": \"Sat, 26 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Midterm Exam\"\n    },\n    {\n        \"eventDate\": \"Fri, 02 May 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Lecture\"\n    },\n    {\n        \"eventDate\": \"Sun, 03 Aug 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Tutorial\"\n    },\n    {\n        \"eventDate\": \"Thu, 07 Aug 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Midterm Exam\"\n    },\n    {\n        \"eventDate\": \"Tue, 26 Aug 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Project Submission\"\n    },\n    {\n        \"eventDate\": \"Fri, 03 Oct 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"eventDate\": \"Wed, 24 Dec 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"eventDate\": \"Mon, 12 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Seminar\"\n    },\n    {\n        \"eventDate\": \"Fri, 23 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Lecture\"\n    },\n    {\n        \"eventDate\": \"Fri, 13 Feb 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Midterm Exam\"\n    },\n    {\n        \"eventDate\": \"Sat, 21 Mar 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Seminar\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Retrieve Student Calendar Events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/students/620002500/calendar-events",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "students",
+            "620002500",
+            "calendar-events"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Retrieve Student Calendar Events",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{hostname}}/students/620002500/calendar-events",
+              "host": [
+                "{{hostname}}"
+              ],
+              "path": [
+                "students",
+                "620002500",
+                "calendar-events"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Werkzeug/3.1.8 Python/3.14.2"
+            },
+            {
+              "key": "Date",
+              "value": "Sat, 11 Apr 2026 22:26:19 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "7631"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            }
+          ],
+          "cookie": [],
+          "body": "[\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Fri, 11 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Project Submission\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Tue, 22 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Sat, 26 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Project Submission\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Sat, 26 Jul 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Guest Lecture\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Wed, 17 Sep 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Mon, 05 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Office Hours\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Mon, 12 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Lab Session\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Wed, 14 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Quiz\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Wed, 14 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Review Session\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Tue, 24 Feb 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Guest Lecture\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Sun, 08 Mar 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Study Group\"\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"courseName\": \"ARCH Building Information Modelling\",\n        \"eventDate\": \"Mon, 16 Mar 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Study Group\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Wed, 02 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Project Submission\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Sat, 09 Aug 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Lab Session\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Tue, 30 Sep 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Lecture\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Sun, 19 Oct 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Lab Session\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Sun, 19 Oct 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Midterm Exam\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Tue, 28 Oct 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Lab Session\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Tue, 18 Nov 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Tutorial\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Mon, 24 Nov 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Quiz\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Mon, 22 Dec 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Guest Lecture\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Thu, 25 Dec 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Office Hours\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Mon, 23 Feb 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Office Hours\"\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"courseName\": \"EDUC Comparative Education\",\n        \"eventDate\": \"Sun, 29 Mar 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Lecture\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Fri, 04 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Workshop\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Sun, 18 May 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Mon, 26 May 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Fri, 06 Jun 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Study Group\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Sun, 08 Jun 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Guest Lecture\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Mon, 14 Jul 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Tutorial\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Tue, 02 Sep 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Quiz\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Wed, 22 Oct 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Quiz\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Sun, 01 Feb 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Review Session\"\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"courseName\": \"MGMT Marketing Management\",\n        \"eventDate\": \"Sun, 22 Mar 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Review Session\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Tue, 01 Apr 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Wed, 14 May 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Office Hours\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Thu, 12 Jun 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Assignment Due\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Wed, 09 Jul 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Quiz\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Tue, 26 Aug 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Review Session\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Wed, 24 Sep 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Project Submission\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Thu, 16 Oct 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Lab Session\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Fri, 05 Dec 2025 00:00:00 GMT\",\n        \"eventTitle\": \"Office Hours\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Tue, 06 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Workshop\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Wed, 14 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Lecture\"\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"courseName\": \"PSYC Biopsychology\",\n        \"eventDate\": \"Sat, 31 Jan 2026 00:00:00 GMT\",\n        \"eventTitle\": \"Lab Session\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Report 1 - 50 courses or more",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/reports/courses-50",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "reports",
+            "courses-50"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Report 2 - Lecturers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/reports/lecturers-3",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "reports",
+            "lecturers-3"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Report 3 - Enrolled in 5 or More",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/reports/students-5plus",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "reports",
+            "students-5plus"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Report 4 - 10 Most Enrolled Courses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/reports/most-enrolled",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "reports",
+            "most-enrolled"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Report 5 - Top Students by Average",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/reports/top-students-by-average",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "reports",
+            "top-students-by-average"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{hostname}}/users/620002500",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "users",
+            "620002500"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"david.hart@vle.uwi.edu\",\r\n  \"password\": \"65aa295ac32bbab3ac8e2e4511768e0b164fe5d02de2486325687ad75a66\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{hostname}}/auth/login",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Login",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"david.hart@vle.uwi.edu\",\r\n  \"password\": \"65aa295ac32bbab3ac8e2e4511768e0b164fe5d02de2486325687ad75a66\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{hostname}}/auth/login",
+              "host": [
+                "{{hostname}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Werkzeug/3.1.8 Python/3.14.2"
+            },
+            {
+              "key": "Date",
+              "value": "Sat, 11 Apr 2026 23:26:40 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "148"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"message\": \"Login successful\",\n    \"user\": {\n        \"accessLvl\": \"student\",\n        \"fname\": \"David\",\n        \"lname\": \"Hart\",\n        \"userID\": 620002500\n    }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Thread",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n\"userID\":200000001,\r\n\"threadbody\":\"This is my first thread in this forum\",\r\n\"topic\":\"Introduction\",\r\n\"parentpostID\":null}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{hostname}}/forums/1/threads",
+          "host": [
+            "{{hostname}}"
+          ],
+          "path": [
+            "forums",
+            "1",
+            "threads"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

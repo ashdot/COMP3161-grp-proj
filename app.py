@@ -32,9 +32,13 @@ def get_data():
 @app.route('/users', methods=['GET']) 
 def get_users():
     conn = get_db_connection()
+
     cursor = conn.cursor(dictionary=True) 
+
     cursor.execute("SELECT * FROM users")
+
     users = cursor.fetchall() 
+    
     cursor.close() 
     conn.close()
     return jsonify(users)
@@ -219,7 +223,6 @@ def enroll_student(courseCode):
 
 # GET /courses/{courseCode}/sections - useful for structuring the course (modules, weeks, topics)
 # GET /courses/{courseCode}/content - this is how students access lecture notes, readings, etc 
-
 
 #NOT TESTED AS YET 
 # POST /assignments/{secItemID}/submissions - Students need to submit work ( ASH ) 
