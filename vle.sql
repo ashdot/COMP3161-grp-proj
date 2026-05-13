@@ -147,9 +147,19 @@ JOIN CourseCalendar cc ON c.courseCode = cc.courseCode
 JOIN CalendarEvents ce ON cc.calendarID = ce.calendarID;
 
 -- Course Membership View (derived from enrollment and teaching assignments)
-CREATE VIEW CourseMember AS
-SELECT userID, 'student' AS memberRole, courseCode
+CREATE VIEW CourseMember AS -- Fixed error in Postman that prevented comparison 
+SELECT 
+    userID,
+    CAST('student' AS CHAR CHARACTER SET utf8mb4)
+        COLLATE utf8mb4_0900_ai_ci AS memberRole,
+    courseCode
 FROM Enrol
+
 UNION ALL
-SELECT userID, 'lecturer' AS memberRole, courseCode
+
+SELECT 
+    userID,
+    CAST('lecturer' AS CHAR CHARACTER SET utf8mb4)
+        COLLATE utf8mb4_0900_ai_ci AS memberRole,
+    courseCode
 FROM Teaches;

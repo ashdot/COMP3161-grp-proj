@@ -564,13 +564,27 @@ def get_course_lecturer(cursor, course_code):
 def get_data():
     return jsonify({"message": "Hello world"})
 
+#Put here for Testing Purposes 
+@app.route('/debug/tables', methods=['GET'])
+def debug_tables():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SHOW TABLES")
+        tables = [table[0] for table in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+        return jsonify({"database": "Vle", "tables": tables}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # GET /users - public user listing for demos; excludes password hashes.
 @app.route('/users', methods=['GET']) 
 def get_users():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True) 
-    cursor.execute("SELECT userID, fname, lname, email, accessLvl FROM UserAccount")
+    cursor.execute("SELECT userID, fname, lname, email, accessLvl FROM useraccount")
     users = cursor.fetchall() 
     cursor.close() 
     conn.close()
