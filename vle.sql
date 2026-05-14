@@ -163,3 +163,42 @@ SELECT
         COLLATE utf8mb4_0900_ai_ci AS memberRole,
     courseCode
 FROM Teaches;
+
+
+-- INDEXES 
+
+-- UserAccount: Filter by access level )
+CREATE INDEX idx_user_accesslvl ON UserAccount(accessLvl);
+
+-- DiscussionForum: Get forums by course
+CREATE INDEX idx_discussionforum_coursecode ON DiscussionForum(courseCode);
+
+-- DiscussionThread: Get top-level threads (dfID + parentpostID IS NULL queries)
+CREATE INDEX idx_discussionthread_df_parent ON DiscussionThread(dfID, parentpostID);
+
+-- DiscussionThread: Get replies to a specific post
+CREATE INDEX idx_discussionthread_parentpost ON DiscussionThread(parentpostID);
+
+-- DiscussionThread: Get posts by user
+CREATE INDEX idx_discussionthread_user ON DiscussionThread(userID);
+
+-- DiscussionThread: Sort by date
+CREATE INDEX idx_discussionthread_date ON DiscussionThread(date_created);
+
+-- CourseSection: Get sections by course
+CREATE INDEX idx_coursesection_coursecode ON CourseSection(courseCode);
+
+-- SectionItems: Get items by section
+CREATE INDEX idx_sectionitems_secid ON SectionItems(secID);
+
+-- SectionItems: Filter by item type (assignments, etc.)
+CREATE INDEX idx_sectionitems_itemtype ON SectionItems(itemtype);
+
+-- CalendarEvents: Get events by calendar
+CREATE INDEX idx_calendarevents_calendarid ON CalendarEvents(calendarID);
+
+-- CalendarEvents: Filter events by date
+CREATE INDEX idx_calendarevents_date ON CalendarEvents(eventDate);
+
+-- CalendarEvents: Link events to section items
+CREATE INDEX idx_calendarevents_secitem ON CalendarEvents(secItemID);
