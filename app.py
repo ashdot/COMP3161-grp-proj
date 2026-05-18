@@ -1411,6 +1411,62 @@ def submit_submission(secItemID):
         conn.close()
 
 
+# GET /assignments/{secItemID}/submissions - Basic Auth course manager reads submissions.
+@app.route('/assignments/<secItemID>/submissions', methods=['GET'])
+def get_assignment_submissions(secItemID):
+    user, auth_error = require_basic_auth()
+    if auth_error:
+        return auth_error
+
+    try:
+        sec_item_id = parse_required_int(secItemID, "secItemID")
+    except ValueError as err:
+        return jsonify({"error": str(err)}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        section_item = get_section_item_submission_context(cursor, sec_item_id)
+        if not section_item:
+            return jsonify({"error": "Section item not found"}), 404
+        if section_item["itemtype"] != "assignment":
+            return jsonify({"error": "Submissions are only available for assignment section items"}), 400
+        if not can_manage_course(cursor, user, section_item["courseCode"]):
+            return jsonify({"error": "User cannot view submissions for this assignment"}), 403
+
+        cursor.execute("""
+            SELECT
+                s.subID,
+                s.userID,
+                ua.fname,
+                ua.lname,
+                s.subText,
+                s.subContent,
+                s.submDate,
+                s.grade
+            FROM Submission s
+            JOIN UserAccount ua ON s.userID = ua.userID
+            WHERE s.secItemID = %s
+            ORDER BY s.submDate DESC, s.subID DESC
+        """, (sec_item_id,))
+
+        submissions = []
+        for row in cursor.fetchall():
+            subm_date = row["submDate"]
+            if hasattr(subm_date, "isoformat"):
+                subm_date = subm_date.isoformat()
+            row["submDate"] = subm_date
+            submissions.append(row)
+
+        return jsonify(submissions), 200
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 400
+    finally:
+        cursor.close()
+        conn.close()
+
+
 # PUT /submissions/{subID}/grade - Basic Auth admin or assigned lecturer grades work.
 @app.route('/submissions/<int:subID>/grade', methods=['PUT'])
 def grade_assignment(subID):

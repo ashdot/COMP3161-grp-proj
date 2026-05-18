@@ -1,434 +1,312 @@
-// // // const BASE_URL = "http://localhost:5000";
+const BASE_URL = import.meta.env?.VITE_API_BASE_URL || "http://127.0.0.1:5000";
+const REQUEST_TIMEOUT_MS = 15000;
 
-// // // export async function loginUser(email, password) {
-// // //   const res = await fetch(`${BASE_URL}/auth/login`, {
-// // //     method: "POST",
-// // //     headers: { "Content-Type": "application/json" },
-// // //     body: JSON.stringify({ email, password }),
-// // //   });
-// // //   return res.json();
-// // // }
+async function apiRequest(path, options = {}) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-// // // export async function getCourses() {
-// // //   const res = await fetch(`${BASE_URL}/courses`);
-// // //   return res.json();
-// // // }
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+    });
 
+    const contentType = res.headers.get("content-type") || "";
+    let data = null;
 
-// // // export async function getStudentCourses(adminEmail, adminPassword, userID) {
-// // //   const credentials = btoa(`${adminEmail}:${adminPassword}`);
-// // //   const res = await fetch(`${BASE_URL}/students/${userID}/courses`, {
-// // //     headers: { Authorization: `Basic ${credentials}` },
-// // //   });
-// // //   return res.json();
-// // // }
+    if (res.status !== 204) {
+      data = contentType.includes("application/json")
+        ? await res.json()
+        : { error: (await res.text()) || res.statusText || "Request failed" };
+    }
 
+    return {
+      ok: res.ok,
+      status: res.status,
+      data,
+      error: data?.error || (!res.ok ? res.statusText || "Request failed" : null),
+    };
+  } catch (err) {
+    const timedOut = err?.name === "AbortError";
+    return {
+      ok: false,
+      status: 0,
+      data: null,
+      error: timedOut
+        ? "Request timed out. Check that the backend is running."
+        : `Cannot reach the backend at ${BASE_URL}.`,
+    };
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
-// // const BASE_URL = "http://localhost:5000";
+async function readJson(path, options = {}, fallback = "Request failed") {
+  const result = await apiRequest(path, options);
+  if (!result.ok) throw new Error(result.error || fallback);
+  return result.data;
+}
 
-// // export async function loginUser(email, password) {
-// //   const res = await fetch(`${BASE_URL}/auth/login`, {
-// //     method: "POST",
-// //     headers: { "Content-Type": "application/json" },
-// //     body: JSON.stringify({ email, password }),
-// //   });
-// //   return res.json();
-// // }
+async function resultJson(path, options = {}) {
+  const result = await apiRequest(path, options);
+  if (result.data && typeof result.data === "object" && !Array.isArray(result.data)) {
+    return { status: result.status, ...result.data };
+  }
+  return {
+    status: result.status,
+    data: result.data,
+    error: result.error,
+  };
+}
 
-// // export async function getCourses() {
-// //   const res = await fetch(`${BASE_URL}/courses`);
-// //   return res.json();
-// // }
+async function writeJsonOrThrow(path, options = {}, fallback = "Request failed") {
+  const result = await resultJson(path, options);
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(result.error || fallback);
+  }
+  return result;
+}
 
-// // export async function getStudentCourses(adminEmail, adminPassword, userID) {
-// //   const credentials = btoa(`${adminEmail}:${adminPassword}`);
-// //   const res = await fetch(`${BASE_URL}/students/${userID}/courses`, {
-// //     headers: { Authorization: `Basic ${credentials}` },
-// //   });
-// //   return res.json();
-// // }
-
-// // /**
-// //  * Register a new user.
-// //  * Your Flask /users/register route requires Basic Auth from an admin account.
-// //  * It accepts: fname, lname, email, accessLvl
-// //  *
-// //  * @param {string} adminEmail    - the admin's email (for Basic Auth)
-// //  * @param {string} adminPassword - the admin's password (for Basic Auth)
-// //  * @param {object} userData      - { fname, lname, email, accessLvl }
-// //  */
-// // export async function registerUser(adminEmail, adminPassword, userData) {
-// //   const credentials = btoa(`${adminEmail}:${adminPassword}`);
-
-// //   const res = await fetch(`${BASE_URL}/users/register`, {
-// //     method: "POST",
-// //     headers: {
-// //       "Content-Type": "application/json",
-// //       Authorization: `Basic ${credentials}`,
-// //     },
-// //     body: JSON.stringify({
-// //       fname: userData.fname,
-// //       lname: userData.lname,
-// //       email: userData.email,
-// //       accessLvl: userData.accessLvl,
-// //     }),
-// //   });
-
-// //   const data = await res.json();
-
-// //   // Attach the HTTP status so the component can react to errors
-// //   return { status: res.status, ...data };
-// // }
-
-
-
-// const BASE_URL = "http://localhost:5000";
-
-// // ─── Auth helpers ────────────────────────────────────────────────────────────
-
-// export function getStoredUser() {
-//   const raw = localStorage.getItem("user") || sessionStorage.getItem("user");
-//   return raw ? JSON.parse(raw) : null;
-// }
-
-// export function getStoredPassword() {
-//   return localStorage.getItem("password") || sessionStorage.getItem("password");
-// }
-
-// function basicAuthHeader() {
-//   const user = getStoredUser();
-//   const password = getStoredPassword();
-//   if (!user || !password) return {};
-//   const credentials = btoa(`${user.email}:${password}`);
-//   return { Authorization: `Basic ${credentials}` };
-// }
-
-// function jsonHeaders() {
-//   return { "Content-Type": "application/json", ...basicAuthHeader() };
-// }
-
-// // ─── Auth ─────────────────────────────────────────────────────────────────
-
-// export async function loginUser(email, password) {
-//   const res = await fetch(`${BASE_URL}/auth/login`, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ email, password }),
-//   });
-//   return { status: res.status, ...(await res.json()) };
-// }
-
-// export async function registerUser(adminEmail, adminPassword, userData) {
-//   const credentials = btoa(`${adminEmail}:${adminPassword}`);
-//   const res = await fetch(`${BASE_URL}/users/register`, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json", Authorization: `Basic ${credentials}` },
-//     body: JSON.stringify({
-//       fname: userData.fname,
-//       lname: userData.lname,
-//       email: userData.email,
-//       accessLvl: userData.accessLvl,
-//     }),
-//   });
-//   return { status: res.status, ...(await res.json()) };
-// }
-
-// // ─── Courses ──────────────────────────────────────────────────────────────
-
-// export async function getCourses() {
-//   const res = await fetch(`${BASE_URL}/courses`);
-//   return res.json();
-// }
-
-// export async function getStudentCourses(userID) {
-//   const res = await fetch(`${BASE_URL}/students/${userID}/courses`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch student courses");
-//   return res.json();
-// }
-
-// export async function getLecturerCourses(userID) {
-//   const res = await fetch(`${BASE_URL}/lecturers/${userID}/courses`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch lecturer courses");
-//   return res.json();
-// }
-
-// // ─── Course content ────────────────────────────────────────────────────────
-
-// export async function getCourseContent(courseCode) {
-//   const res = await fetch(`${BASE_URL}/courses/${courseCode}/content`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch course content");
-//   return res.json();
-// }
-
-// export async function getCourseMembers(courseCode) {
-//   const res = await fetch(`${BASE_URL}/courses/${courseCode}/members`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch course members");
-//   return res.json();
-// }
-
-// // ─── Grades ───────────────────────────────────────────────────────────────
-
-// export async function getStudentCourseGrade(userID, courseCode) {
-//   const res = await fetch(`${BASE_URL}/students/${userID}/${courseCode}/grades`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch grade");
-//   return res.json();
-// }
-
-// // ─── Calendar ─────────────────────────────────────────────────────────────
-
-// export async function getStudentCalendarEvents(userID) {
-//   const res = await fetch(`${BASE_URL}/students/${userID}/calendar-events`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch calendar events");
-//   return res.json();
-// }
-
-// // ─── Forums ───────────────────────────────────────────────────────────────
-
-// export async function getCourseForums(courseCode) {
-//   const res = await fetch(`${BASE_URL}/courses/${courseCode}/forums`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch forums");
-//   return res.json();
-// }
-
-// export async function getForumThreads(dfID) {
-//   const res = await fetch(`${BASE_URL}/forums/${dfID}/threads`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch threads");
-//   return res.json();
-// }
-
-// export async function getThread(dtID) {
-//   const res = await fetch(`${BASE_URL}/threads/${dtID}`, { headers: basicAuthHeader() });
-//   if (!res.ok) throw new Error("Failed to fetch thread");
-//   return res.json();
-// }
-
-// export async function createThread(dfID, topic, threadbody) {
-//   const res = await fetch(`${BASE_URL}/forums/${dfID}/threads`, {
-//     method: "POST",
-//     headers: jsonHeaders(),
-//     body: JSON.stringify({ topic: topic || null, threadbody }),
-//   });
-//   if (!res.ok) throw new Error("Failed to create thread");
-//   return res.json();
-// }
-
-// export async function replyToThread(dtID, threadbody) {
-//   const res = await fetch(`${BASE_URL}/threads/${dtID}/replies`, {
-//     method: "POST",
-//     headers: jsonHeaders(),
-//     body: JSON.stringify({ threadbody, topic: null }),
-//   });
-//   if (!res.ok) throw new Error("Failed to post reply");
-//   return res.json();
-// }
-
-// 3am
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5000";
-
-// ─── Session helpers ──────────────────────────────────────────────────────────
 export function getStoredUser() {
   const raw = localStorage.getItem("user") || sessionStorage.getItem("user");
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    logout();
+    return null;
+  }
 }
+
 export function getStoredPassword() {
   return localStorage.getItem("password") || sessionStorage.getItem("password");
 }
+
 export function logout() {
-  localStorage.removeItem("user"); localStorage.removeItem("password");
-  sessionStorage.removeItem("user"); sessionStorage.removeItem("password");
+  localStorage.removeItem("user");
+  localStorage.removeItem("password");
+  sessionStorage.removeItem("user");
+  sessionStorage.removeItem("password");
 }
+
 function basicAuthHeader() {
   const user = getStoredUser();
   const pw = getStoredPassword();
   if (!user || !pw) return {};
   return { Authorization: `Basic ${btoa(`${user.email}:${pw}`)}` };
 }
+
 function jsonHeaders() {
   return { "Content-Type": "application/json", ...basicAuthHeader() };
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
 export async function loginUser(email, password) {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
+  return resultJson("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function registerUser(adminEmail, adminPassword, userData) {
-  const res = await fetch(`${BASE_URL}/users/register`, {
+  return resultJson("/users/register", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Basic ${btoa(`${adminEmail}:${adminPassword}`)}` },
-    body: JSON.stringify({ fname: userData.fname, lname: userData.lname, email: userData.email, accessLvl: userData.accessLvl }),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${btoa(`${adminEmail}:${adminPassword}`)}`,
+    },
+    body: JSON.stringify({
+      fname: userData.fname,
+      lname: userData.lname,
+      email: userData.email,
+      accessLvl: userData.accessLvl,
+    }),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function getUsers() {
-  const res = await fetch(`${BASE_URL}/users`);
-  return res.json();
+  return readJson("/users");
 }
 
-// ─── Courses ──────────────────────────────────────────────────────────────────
 export async function getCourses() {
-  const res = await fetch(`${BASE_URL}/courses`);
-  return res.json();
+  return readJson("/courses");
 }
+
 export async function createCourse(data) {
-  const res = await fetch(`${BASE_URL}/courses`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify(data),
+  return resultJson("/courses", {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify(data),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function deleteCourse(courseCode) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}`, {
-    method: "DELETE", headers: basicAuthHeader(),
+  return resultJson(`/courses/${courseCode}`, {
+    method: "DELETE",
+    headers: basicAuthHeader(),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function assignLecturer(courseCode, lecturerID) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/lecturer`, {
-    method: "PUT", headers: jsonHeaders(), body: JSON.stringify({ lecturerID }),
+  return resultJson(`/courses/${courseCode}/lecturer`, {
+    method: "PUT",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ lecturerID }),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function enrollStudent(courseCode, userID) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/enrollments`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify({ userID }),
+  return resultJson(`/courses/${courseCode}/enrollments`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ userID }),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function getStudentCourses(userID) {
-  const res = await fetch(`${BASE_URL}/students/${userID}/courses`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed to fetch student courses");
-  return res.json();
+  return readJson(
+    `/students/${userID}/courses`,
+    { headers: basicAuthHeader() },
+    "Failed to fetch student courses"
+  );
 }
+
 export async function getLecturerCourses(userID) {
-  const res = await fetch(`${BASE_URL}/lecturers/${userID}/courses`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed to fetch lecturer courses");
-  return res.json();
+  return readJson(
+    `/lecturers/${userID}/courses`,
+    { headers: basicAuthHeader() },
+    "Failed to fetch lecturer courses"
+  );
 }
+
 export async function getCourseMembers(courseCode) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/members`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  return readJson(`/courses/${courseCode}/members`, { headers: basicAuthHeader() });
 }
 
-// ─── Sections & Content ───────────────────────────────────────────────────────
 export async function getCourseContent(courseCode) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/content`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  return readJson(`/courses/${courseCode}/content`, { headers: basicAuthHeader() });
 }
+
 export async function createSection(courseCode, secName) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/sections`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify({ secName }),
+  return resultJson(`/courses/${courseCode}/sections`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ secName }),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function createSectionItem(secID, data) {
-  const res = await fetch(`${BASE_URL}/sections/${secID}/items`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify(data),
+  return resultJson(`/sections/${secID}/items`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify(data),
   });
-  return { status: res.status, ...(await res.json()) };
 }
 
-// ─── Grades ───────────────────────────────────────────────────────────────────
 export async function getStudentGrades(userID) {
-  const res = await fetch(`${BASE_URL}/students/${userID}/grades`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  return readJson(`/students/${userID}/grades`, { headers: basicAuthHeader() });
 }
+
 export async function getStudentCourseGrade(userID, courseCode) {
-  const res = await fetch(`${BASE_URL}/students/${userID}/${courseCode}/grades`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  return readJson(`/students/${userID}/${courseCode}/grades`, { headers: basicAuthHeader() });
 }
+
 export async function gradeSubmission(subID, grade) {
-  const res = await fetch(`${BASE_URL}/submissions/${subID}/grade`, {
-    method: "PUT", headers: jsonHeaders(), body: JSON.stringify({ grade }),
+  return resultJson(`/submissions/${subID}/grade`, {
+    method: "PUT",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ grade }),
   });
-  return { status: res.status, ...(await res.json()) };
 }
+
 export async function submitAssignment(secItemID, subText) {
-  const res = await fetch(`${BASE_URL}/assignments/${secItemID}/submissions`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify({ subText }),
+  return resultJson(`/assignments/${secItemID}/submissions`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ subText }),
   });
-  return { status: res.status, ...(await res.json()) };
 }
 
-// ─── Calendar ─────────────────────────────────────────────────────────────────
+export async function getAssignmentSubmissions(secItemID) {
+  return readJson(`/assignments/${secItemID}/submissions`, { headers: basicAuthHeader() });
+}
+
 export async function getCourseCalendarEvents(courseCode) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/calendar-events`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  return readJson(`/courses/${courseCode}/calendar-events`, { headers: basicAuthHeader() });
 }
+
 export async function getStudentCalendarEvents(userID) {
-  const res = await fetch(`${BASE_URL}/students/${userID}/calendar-events`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  return readJson(`/students/${userID}/calendar-events`, { headers: basicAuthHeader() });
 }
+
 export async function createCalendarEvent(courseCode, data) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/calendar-events`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify(data),
+  return resultJson(`/courses/${courseCode}/calendar-events`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify(data),
   });
-  return { status: res.status, ...(await res.json()) };
 }
 
-// ─── Forums ───────────────────────────────────────────────────────────────────
 export async function getCourseForums(courseCode) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/forums`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
-}
-export async function createForum(courseCode, dfname) {
-  const res = await fetch(`${BASE_URL}/courses/${courseCode}/forums`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify({ dfname }),
-  });
-  return { status: res.status, ...(await res.json()) };
-}
-export async function getForumThreads(dfID) {
-  const res = await fetch(`${BASE_URL}/forums/${dfID}/threads`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
-}
-export async function getThread(dtID) {
-  const res = await fetch(`${BASE_URL}/threads/${dtID}`, { headers: basicAuthHeader() });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
-}
-export async function createThread(dfID, topic, threadbody) {
-  const res = await fetch(`${BASE_URL}/forums/${dfID}/threads`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify({ topic: topic || null, threadbody }),
-  });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
-}
-export async function replyToThread(dtID, threadbody) {
-  const res = await fetch(`${BASE_URL}/threads/${dtID}/replies`, {
-    method: "POST", headers: jsonHeaders(), body: JSON.stringify({ threadbody, topic: null }),
-  });
-  if (!res.ok) throw new Error("Failed");
-  return res.json();
+  return readJson(`/courses/${courseCode}/forums`, { headers: basicAuthHeader() });
 }
 
-// ─── Reports ──────────────────────────────────────────────────────────────────
+export async function createForum(courseCode, dfname) {
+  return resultJson(`/courses/${courseCode}/forums`, {
+    method: "POST",
+    headers: jsonHeaders(),
+    body: JSON.stringify({ dfname }),
+  });
+}
+
+export async function getForumThreads(dfID) {
+  return readJson(`/forums/${dfID}/threads`, { headers: basicAuthHeader() });
+}
+
+export async function getThread(dtID) {
+  return readJson(`/threads/${dtID}`, { headers: basicAuthHeader() });
+}
+
+export async function createThread(dfID, topic, threadbody) {
+  return writeJsonOrThrow(
+    `/forums/${dfID}/threads`,
+    {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify({ topic: topic || null, threadbody }),
+    },
+    "Failed to create thread"
+  );
+}
+
+export async function replyToThread(dtID, threadbody) {
+  return writeJsonOrThrow(
+    `/threads/${dtID}/replies`,
+    {
+      method: "POST",
+      headers: jsonHeaders(),
+      body: JSON.stringify({ threadbody, topic: null }),
+    },
+    "Failed to post reply"
+  );
+}
+
 export async function reportCourses50() {
-  const res = await fetch(`${BASE_URL}/reports/courses-50`);
-  return res.json();
+  return readJson("/reports/courses-50");
 }
+
 export async function reportStudents5plus() {
-  const res = await fetch(`${BASE_URL}/reports/students-5plus`);
-  return res.json();
+  return readJson("/reports/students-5plus");
 }
+
 export async function reportLecturers3() {
-  const res = await fetch(`${BASE_URL}/reports/lecturers-3`);
-  return res.json();
+  return readJson("/reports/lecturers-3");
 }
+
 export async function reportMostEnrolled() {
-  const res = await fetch(`${BASE_URL}/reports/most-enrolled`);
-  return res.json();
+  return readJson("/reports/most-enrolled");
 }
+
 export async function reportTopStudents() {
-  const res = await fetch(`${BASE_URL}/reports/top-students-by-average`);
-  return res.json();
+  return readJson("/reports/top-students-by-average");
 }

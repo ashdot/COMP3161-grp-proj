@@ -34,7 +34,7 @@ import ForumSection from "./Forumsection";
 import SettingsPage from "./SettingsPage";
 import {
   getStoredUser, getLecturerCourses, getCourseContent, getCourseMembers,
-  createSection, createSectionItem, gradeSubmission, getCourseCalendarEvents,
+  createSection, createSectionItem, getAssignmentSubmissions, gradeSubmission, getCourseCalendarEvents,
   createCalendarEvent, createForum, getCourseForums
 } from "@/api";
 
@@ -70,6 +70,8 @@ function CourseManager({ course, onBack }) {
   // Grade form
   const [gradeInputs, setGradeInputs] = useState({});
   const [gradingMsg, setGradingMsg] = useState(null);
+  const [submissionsByItem, setSubmissionsByItem] = useState({});
+  const [loadingSubmissions, setLoadingSubmissions] = useState({});
 
   // Calendar form
   const [calForm, setCalForm] = useState({ eventDate:"", eventTitle:"" });
@@ -132,11 +134,24 @@ function CourseManager({ course, onBack }) {
     setTimeout(() => setItemMsg(null), 3000);
   };
 
-  const handleGrade = async (subID) => {
+  const loadSubmissions = async (secItemID) => {
+    setLoadingSubmissions(p => ({ ...p, [secItemID]: true }));
+    try {
+      const data = await getAssignmentSubmissions(secItemID);
+      setSubmissionsByItem(p => ({ ...p, [secItemID]: Array.isArray(data) ? data : [] }));
+    } catch {
+      setSubmissionsByItem(p => ({ ...p, [secItemID]: [] }));
+    } finally {
+      setLoadingSubmissions(p => ({ ...p, [secItemID]: false }));
+    }
+  };
+
+  const handleGrade = async (subID, secItemID) => {
     const g = parseInt(gradeInputs[subID]);
     if (isNaN(g) || g < 0 || g > 100) { setGradingMsg("Grade must be 0–100"); return; }
     const r = await gradeSubmission(subID, g);
     setGradingMsg(r.status === 200 ? "Graded!" : r.error || "Error");
+    if (r.status === 200 && secItemID) loadSubmissions(secItemID);
     setTimeout(() => setGradingMsg(null), 3000);
   };
 
@@ -256,15 +271,32 @@ function CourseManager({ course, onBack }) {
                               {item.dueDate&&<Badge variant="destructive" className="text-[10px]">Due: {item.dueDate}</Badge>}
                             </div>
                             {item.itemtype==="assignment" && (
-                              <div className="flex items-center gap-2 pl-10">
-                                <Input type="number" min="0" max="100" placeholder="Grade (0-100)"
-                                  value={gradeInputs[item.secItemID]||""}
-                                  onChange={e=>setGradeInputs(p=>({...p,[item.secItemID]:e.target.value}))}
-                                  className="h-8 w-[160px] text-[12px]"/>
-                                <Button size="sm" className="h-8 text-[11px] bg-emerald-600 hover:bg-emerald-700"
-                                  onClick={()=>handleGrade(item.secItemID)}>
-                                  Save Grade
+                              <div className="flex flex-col gap-2 pl-10">
+                                <Button type="button" size="sm" variant="outline"
+                                  disabled={loadingSubmissions[item.secItemID]}
+                                  onClick={()=>loadSubmissions(item.secItemID)}
+                                  className="h-8 w-fit text-[11px]">
+                                  {loadingSubmissions[item.secItemID] ? "Loading..." : "View Submissions"}
                                 </Button>
+                                {(submissionsByItem[item.secItemID] || []).map(sub => (
+                                  <div key={sub.subID} className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                                    <div className="min-w-[180px] flex-1">
+                                      <p className="text-[12px] font-semibold text-slate-700">{sub.fname} {sub.lname} <span className="text-slate-400">#{sub.subID}</span></p>
+                                      <p className="text-[11px] text-slate-400">{sub.subText || sub.subContent || "No submission text"}</p>
+                                    </div>
+                                    <Input type="number" min="0" max="100" placeholder={sub.grade ?? "Grade"}
+                                      value={gradeInputs[sub.subID] ?? ""}
+                                      onChange={e=>setGradeInputs(p=>({...p,[sub.subID]:e.target.value}))}
+                                      className="h-8 w-[110px] text-[12px]"/>
+                                    <Button size="sm" className="h-8 text-[11px] bg-emerald-600 hover:bg-emerald-700"
+                                      onClick={()=>handleGrade(sub.subID, item.secItemID)}>
+                                      Save Grade
+                                    </Button>
+                                  </div>
+                                ))}
+                                {submissionsByItem[item.secItemID]?.length === 0 && (
+                                  <p className="text-[11px] text-slate-400">No submissions yet.</p>
+                                )}
                               </div>
                             )}
                           </div>

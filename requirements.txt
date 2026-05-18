@@ -6,3 +6,4 @@ Flask-HTTPAuth
 flask-jwt-extended
 Flask-Login
 Faker
+redis

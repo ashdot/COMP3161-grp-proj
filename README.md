@@ -31,15 +31,13 @@ mysql -u root -p Vle < reports.sql
 Run the API:
 
 ```powershell
-.\.venv\Scripts\python.exe app.py
+powershell -ExecutionPolicy Bypass -File .\start_backend.ps1
 ```
 
 Run the React frontend in a second terminal:
 
 ```powershell
-cd frontend
-npm install
-npm run dev
+powershell -ExecutionPolicy Bypass -File .\start_frontend.ps1
 ```
 
 The frontend reads its API base URL from `VITE_API_BASE_URL`. Copy `frontend/.env.example` to `frontend/.env` if you need to change the default local API URL.
