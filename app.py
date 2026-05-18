@@ -20,14 +20,17 @@ import mysql.connector
 
 
 from dotenv import load_dotenv
+import redis
 
 
 load_dotenv()
 
 app = Flask(__name__)
 
-app.config["JWT_SECRET_KEY"] = "your_jwt_secret_key" 
-jwt = JWTManager(app)
+# app.config["JWT_SECRET_KEY"] = "your_jwt_secret_key" 
+# jwt = JWTManager(app)
+
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 from flask_cors import CORS
 CORS(app, origins=["http://localhost:5173"])  # Vite's default port
