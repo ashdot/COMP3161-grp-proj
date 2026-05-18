@@ -1,0 +1,33 @@
+# Python virtual environment
+venv/
+env/
+.venv/
+.setup_tmp/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# Mac / Windows junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Frontend dependencies/build output
+frontend/node_modules/
+frontend/dist/
+frontend/.npm-cache/
+
+# Database (optional)
+*.sqlite3
+
+# Flask uploads (if applicable)
+uploads/
