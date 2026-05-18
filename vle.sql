@@ -202,3 +202,12 @@ CREATE INDEX idx_calendarevents_date ON CalendarEvents(eventDate);
 
 -- CalendarEvents: Link events to section items
 CREATE INDEX idx_calendarevents_secitem ON CalendarEvents(secItemID);
+
+
+-- TO SPEED UP THE REPORT VIEWS 
+CREATE INDEX idx_enrol_coursecode ON Enrol(courseCode);
+CREATE INDEX idx_enrol_userid ON Enrol(userID);
+CREATE INDEX idx_teaches_userid ON Teaches(userID);
+
+CREATE INDEX idx_enrol_userid_grade ON Enrol(userID, grade);
+CREATE INDEX idx_useraccount_accesslvl_userid ON UserAccount(accessLvl, userID);
