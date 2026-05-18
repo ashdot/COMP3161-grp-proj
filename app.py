@@ -17,6 +17,8 @@ from flask_login import login_user, logout_user, current_user, login_required
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from datetime import date, datetime
 import mysql.connector
+
+
 from dotenv import load_dotenv
 
 
@@ -27,6 +29,8 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "your_jwt_secret_key" 
 jwt = JWTManager(app)
 
+from flask_cors import CORS
+CORS(app, origins=["http://localhost:5173"])  # Vite's default port
 
 # ---------------------------------------------------------------------------
 # App setup and database connection
