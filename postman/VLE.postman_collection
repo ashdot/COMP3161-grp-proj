@@ -1,0 +1,4007 @@
+{
+  "info": {
+    "_postman_id": "cb656034-fe6d-4c95-be9a-448cd62a03a2",
+    "name": "VLE API Full Workflow",
+    "description": "N.B - Please ensure the local database is built before a clean run.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52800006",
+    "_collection_link": "https://go.postman.co/collection/52800006-cb656034-fe6d-4c95-be9a-448cd62a03a2?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "00 Health / Public",
+      "item": [
+        {
+          "name": "Initialize Run + GET /api/data",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const runStamp = Date.now().toString();",
+                  "const runId = runStamp.slice(-5);",
+                  "pm.environment.set('runId', runId);",
+                  "pm.environment.set('createdCourseCode', `TST${runId}`);",
+                  "pm.environment.set('createdStudentEmail', `postman.student.${runStamp}@vle.uwi.edu`);",
+                  "pm.environment.unset('createdStudentID');",
+                  "pm.environment.unset('createdStudentPassword');",
+                  "pm.environment.unset('createdSectionID');",
+                  "pm.environment.unset('createdSecItemID');",
+                  "pm.environment.unset('createdForumID');",
+                  "pm.environment.unset('createdThreadID');",
+                  "pm.environment.unset('createdReplyID');",
+                  "pm.environment.unset('createdSubmissionID');",
+                  "pm.environment.unset('createdCalendarEventID');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('message exists', function () { pm.expect(json).to.have.property('message'); });",
+                  "pm.test('workflow variables initialized', function () { pm.expect(pm.environment.get('createdCourseCode')).to.match(/^TST\\d{5}$/); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/data",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "data"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Shows Tables In DB",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/debug/tables",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "debug",
+                "tables"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('users array returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });",
+                  "pm.test('user fields exist', function () { pm.expect(json[0]).to.include.keys('userID', 'fname', 'lname', 'email', 'accessLvl'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /courses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('courses array returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });",
+                  "pm.test('course fields exist', function () { pm.expect(json[0]).to.include.keys('courseCode', 'courseName', 'department'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/login as student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('student login succeeds', function () { pm.expect(json).to.have.property('message', 'Login successful'); pm.expect(json.user).to.have.property('accessLvl', 'student'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Student Login"
+          },
+          "response": [
+            {
+              "name": "POST /auth/login as student",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"{{studentPassword}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:00:29 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "118"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Login successful\",\n    \"user\": {\n        \"accessLvl\": \"student\",\n        \"fname\": \"Danielle\",\n        \"lname\": \"Johnson\",\n        \"userID\": 620000000\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login as lecturer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('lecturer login succeeds', function () { pm.expect(json.user).to.have.property('accessLvl', 'lecturer'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{lecturerEmail}}\",\n  \"password\": \"{{lecturerPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /auth/login as lecturer",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{lecturerEmail}}\",\n  \"password\": \"{{lecturerPassword}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:00:42 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "118"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Login successful\",\n    \"user\": {\n        \"accessLvl\": \"lecturer\",\n        \"fname\": \"Samantha\",\n        \"lname\": \"Garcia\",\n        \"userID\": 200000000\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login as admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('admin login succeeds', function () { pm.expect(json.user).to.have.property('accessLvl', 'admin'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /auth/login as admin",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:01:02 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "113"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Login successful\",\n    \"user\": {\n        \"accessLvl\": \"admin\",\n        \"fname\": \"Diana\",\n        \"lname\": \"Burgess\",\n        \"userID\": 111000000\n    }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 Admin User And Course Setup",
+      "item": [
+        {
+          "name": "POST /users/register create workflow student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('registered user fields exist', function () { pm.expect(json.user).to.include.keys('userID', 'email', 'accessLvl'); });",
+                  "pm.environment.set('createdStudentID', json.user.userID);",
+                  "pm.environment.set('createdStudentPassword', json.generatedPassword);",
+                  "pm.test('generated password captured', function () { pm.expect(pm.environment.get('createdStudentPassword')).to.be.a('string').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fname\": \"Postman\",\n  \"lname\": \"Student\",\n  \"email\": \"{{createdStudentEmail}}\",\n  \"accessLvl\": \"student\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/login as created student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created student can log in', function () { pm.expect(json.user).to.have.property('accessLvl', 'student'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{createdStudentEmail}}\",\n  \"password\": \"{{createdStudentPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /auth/login as created student",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{createdStudentEmail}}\",\n  \"password\": \"{{createdStudentPassword}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:48:37 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "117"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Login successful\",\n    \"user\": {\n        \"accessLvl\": \"student\",\n        \"fname\": \"Postman\",\n        \"lname\": \"Student\",\n        \"userID\": 620100001\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /users/{{createdStudentID}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created user can be fetched', function () { pm.expect(json).to.have.property('userID', Number(pm.environment.get('createdStudentID'))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{createdStudentID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{createdStudentID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /courses create workflow course",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created course returned', function () { pm.expect(json.course).to.have.property('courseCode', pm.environment.get('createdCourseCode')); });",
+                  "pm.test('defaults created', function () { pm.expect(json.defaults).to.include.keys('calendarID', 'dfID', 'secID'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseCode\": \"{{createdCourseCode}}\",\n  \"courseName\": \"Postman Workflow {{runId}}\",\n  \"department\": \"Computer Science\",\n  \"lecturerID\": 200000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /courses forbidden for student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{studentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{studentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseCode\": \"BAD{{runId}}\",\n  \"courseName\": \"Forbidden Workflow {{runId}}\",\n  \"department\": \"Computer Science\",\n  \"lecturerID\": 200000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /courses/{{createdCourseCode}}/enrollments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('student enrolled', function () { pm.expect(json).to.have.property('courseCode', pm.environment.get('createdCourseCode')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{createdStudentID}}\",\n  \"grade\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/enrollments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "enrollments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /courses/{{createdCourseCode}}/lecturer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('lecturer assigned or already assigned', function () { pm.expect(json).to.have.property('lecturerID', 200000000); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lecturerID\": 200000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/lecturer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "lecturer"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Course Reads And Authorization",
+      "item": [
+        {
+          "name": "GET /students/{{createdStudentID}}/courses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created course appears for student', function () { pm.expect(json.some(c => c.courseCode === pm.environment.get('createdCourseCode'))).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/{{createdStudentID}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "{{createdStudentID}}",
+                "courses"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /students/{{createdStudentID}}/courses",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/students/{{createdStudentID}}/courses",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "students",
+                    "{{createdStudentID}}",
+                    "courses"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:49:51 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "98"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"TST72652\",\n        \"courseName\": \"Postman Workflow 72652\",\n        \"department\": \"Computer Science\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /lecturers/200000000/courses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('lecturer courses array returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lecturers/200000000/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lecturers",
+                "200000000",
+                "courses"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /lecturers/200000000/courses",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/lecturers/200000000/courses",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "lecturers",
+                    "200000000",
+                    "courses"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:50:19 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "373"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"LITE0008\",\n        \"courseName\": \"LITE Literary Theory\",\n        \"department\": \"Literature\"\n    },\n    {\n        \"courseCode\": \"NURS0006\",\n        \"courseName\": \"NURS Mental Health Nursing\",\n        \"department\": \"Nursing\"\n    },\n    {\n        \"courseCode\": \"TST40637\",\n        \"courseName\": \"Postman Workflow 40637\",\n        \"department\": \"Computer Science\"\n    },\n    {\n        \"courseCode\": \"TST72652\",\n        \"courseName\": \"Postman Workflow 72652\",\n        \"department\": \"Computer Science\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/members",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('member roster includes created student', function () { pm.expect(json.some(m => String(m.userID) === String(pm.environment.get('createdStudentID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{adminEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "members"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/members",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/members",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "members"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:50:47 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "351"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"accessLvl\": \"lecturer\",\n        \"courseCode\": \"TST72652\",\n        \"email\": \"samantha.garcia_lec0@vle.uwi.edu\",\n        \"fname\": \"Samantha\",\n        \"lname\": \"Garcia\",\n        \"memberRole\": \"lecturer\",\n        \"userID\": 200000000\n    },\n    {\n        \"accessLvl\": \"student\",\n        \"courseCode\": \"TST72652\",\n        \"email\": \"postman.student.1779072972652@vle.uwi.edu\",\n        \"fname\": \"Postman\",\n        \"lname\": \"Student\",\n        \"memberRole\": \"student\",\n        \"userID\": 620100001\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('forums returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "forums"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/forums",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "forums"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:52:09 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "69"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"TST72652\",\n        \"dfID\": 603,\n        \"dfname\": \"General Discussion\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums missing auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "forums"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/forums missing auth",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "forums"
+                  ]
+                }
+              },
+              "status": "UNAUTHORIZED",
+              "code": 401,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:28:09 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "50"
+                },
+                {
+                  "key": "WWW-Authenticate",
+                  "value": "Basic realm=\"VLE API\""
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"error\": \"Valid Basic Auth credentials required\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums unrelated student forbidden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{studentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{studentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "forums"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/forums unrelated student forbidden",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "forums"
+                  ]
+                }
+              },
+              "status": "FORBIDDEN",
+              "code": 403,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:29:51 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "41"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"error\": \"User cannot view this course\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Course Content",
+      "item": [
+        {
+          "name": "GET /courses/{{createdCourseCode}}/sections",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('sections returned', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "sections"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/sections",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "sections"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:53:13 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "69"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"TST72652\",\n        \"secID\": 2207,\n        \"secName\": \"Course Overview\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "POST /courses/{{createdCourseCode}}/sections",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdSectionID', json.section.secID);",
+                  "pm.test('section id captured', function () { pm.expect(pm.environment.get('createdSectionID')).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secName\": \"Postman Section {{runId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "sections"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /courses/{{createdCourseCode}}/sections",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"secName\": \"Postman Section {{runId}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "sections"
+                  ]
+                }
+              },
+              "status": "CREATED",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 03:55:00 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "126"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Section created successfully\",\n    \"section\": {\n        \"courseCode\": \"TST72652\",\n        \"secID\": 2208,\n        \"secName\": \"Postman Section 72652\"\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /courses/{{createdCourseCode}}/sections student forbidden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secName\": \"Forbidden Student Section\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "sections"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /courses/{{createdCourseCode}}/sections student forbidden",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"secName\": \"Forbidden Student Section\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/sections",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "sections"
+                  ]
+                }
+              },
+              "status": "FORBIDDEN",
+              "code": 403,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:23:03 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "43"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"error\": \"User cannot manage this course\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /sections/{{createdSectionID}}/items assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdSecItemID', json.item.secItemID);",
+                  "pm.test('assignment item created', function () { pm.expect(json.item).to.have.property('itemtype', 'assignment'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Assignment\",\n  \"secBody\": \"Submit a short verification response.\",\n  \"secContent\": \"metadata/postman-assignment.txt\",\n  \"itemtype\": \"assignment\",\n  \"dueDate\": \"2026-05-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sections/{{createdSectionID}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sections",
+                "{{createdSectionID}}",
+                "items"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /sections/{{createdSectionID}}/items assignment",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Postman Assignment\",\n  \"secBody\": \"Submit a short verification response.\",\n  \"secContent\": \"metadata/postman-assignment.txt\",\n  \"itemtype\": \"assignment\",\n  \"dueDate\": \"2026-05-01\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/sections/{{createdSectionID}}/items",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "sections",
+                    "{{createdSectionID}}",
+                    "items"
+                  ]
+                }
+              },
+              "status": "CREATED",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:23:11 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "284"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"item\": {\n        \"courseCode\": \"TST72652\",\n        \"dueDate\": \"2026-05-01\",\n        \"itemtype\": \"assignment\",\n        \"secBody\": \"Submit a short verification response.\",\n        \"secContent\": \"metadata/postman-assignment.txt\",\n        \"secID\": 2209,\n        \"secItemID\": 7736,\n        \"title\": \"Postman Assignment\"\n    },\n    \"message\": \"Section item created successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/content",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('content includes sections', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/content",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "content"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/content",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/content",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "content"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:03:14 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "116"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"items\": [],\n        \"secID\": 2207,\n        \"secName\": \"Course Overview\"\n    },\n    {\n        \"items\": [],\n        \"secID\": 2208,\n        \"secName\": \"Postman Section 72652\"\n    }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Forums And Threads",
+      "item": [
+        {
+          "name": "POST /courses/{{createdCourseCode}}/forums",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdForumID', json.dfID);",
+                  "pm.test('forum id captured', function () { pm.expect(pm.environment.get('createdForumID')).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dfname\": \"Postman Forum {{runId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "forums"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /courses/{{createdCourseCode}}/forums",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dfname\": \"Postman Forum {{runId}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "forums"
+                  ]
+                }
+              },
+              "status": "CREATED",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:03:51 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "107"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"courseCode\": \"TST72652\",\n    \"dfID\": 604,\n    \"dfname\": \"Postman Forum 72652\",\n    \"message\": \"Forum created successfully\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/forums after create",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created forum appears', function () { pm.expect(json.some(f => String(f.dfID) === String(pm.environment.get('createdForumID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "forums"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/forums after create",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/forums",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "forums"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:03:59 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "137"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"TST72652\",\n        \"dfID\": 603,\n        \"dfname\": \"General Discussion\"\n    },\n    {\n        \"courseCode\": \"TST72652\",\n        \"dfID\": 604,\n        \"dfname\": \"Postman Forum 72652\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "POST /forums/{{createdForumID}}/threads",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdThreadID', json.dtID);",
+                  "pm.test('thread id captured', function () { pm.expect(pm.environment.get('createdThreadID')).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Postman Thread\",\n  \"threadbody\": \"This is a top-level Postman workflow thread.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/forums/{{createdForumID}}/threads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forums",
+                "{{createdForumID}}",
+                "threads"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /forums/{{createdForumID}}/threads",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"topic\": \"Postman Thread\",\n  \"threadbody\": \"This is a top-level Postman workflow thread.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/forums/{{createdForumID}}/threads",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "forums",
+                    "{{createdForumID}}",
+                    "threads"
+                  ]
+                }
+              },
+              "status": "CREATED",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:04:10 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "108"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"courseCode\": \"TST72652\",\n    \"dfID\": 604,\n    \"dtID\": 5411,\n    \"message\": \"Thread created successfully\",\n    \"userID\": 620100001\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /forums/{{createdForumID}}/threads",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('created thread appears', function () { pm.expect(json.some(t => String(t.dtID) === String(pm.environment.get('createdThreadID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forums/{{createdForumID}}/threads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forums",
+                "{{createdForumID}}",
+                "threads"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /forums/{{createdForumID}}/threads",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/forums/{{createdForumID}}/threads",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "forums",
+                    "{{createdForumID}}",
+                    "threads"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:04:40 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "234"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"TST72652\",\n        \"date_created\": \"2026-05-17\",\n        \"dfID\": 604,\n        \"dtID\": 5411,\n        \"fname\": \"Postman\",\n        \"lname\": \"Student\",\n        \"replyCount\": 0,\n        \"threadbody\": \"This is a top-level Postman workflow thread.\",\n        \"topic\": \"Postman Thread\",\n        \"userID\": 620100001\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "POST /threads/{{createdThreadID}}/replies",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdReplyID', json.dtID);",
+                  "pm.test('reply id captured', function () { pm.expect(pm.environment.get('createdReplyID')).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Postman Reply\",\n  \"threadbody\": \"This is a Postman workflow reply.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/threads/{{createdThreadID}}/replies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "threads",
+                "{{createdThreadID}}",
+                "replies"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /threads/{{createdThreadID}}/replies",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"topic\": \"Postman Reply\",\n  \"threadbody\": \"This is a Postman workflow reply.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/threads/{{createdThreadID}}/replies",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "threads",
+                    "{{createdThreadID}}",
+                    "replies"
+                  ]
+                }
+              },
+              "status": "CREATED",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:07:31 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "127"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"courseCode\": \"TST72652\",\n    \"dfID\": 604,\n    \"dtID\": 5413,\n    \"message\": \"Reply created successfully\",\n    \"parentpostID\": 5411,\n    \"userID\": 200000000\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /threads/{{createdThreadID}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('thread includes replies array', function () { pm.expect(json).to.have.property('replies').that.is.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/threads/{{createdThreadID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "threads",
+                "{{createdThreadID}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /threads/{{createdThreadID}}",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/threads/{{createdThreadID}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "threads",
+                    "{{createdThreadID}}"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:07:43 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "725"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"courseCode\": \"TST72652\",\n    \"date_created\": \"2026-05-17\",\n    \"dfID\": 604,\n    \"dtID\": 5411,\n    \"fname\": \"Postman\",\n    \"lname\": \"Student\",\n    \"parentpostID\": null,\n    \"replies\": [\n        {\n            \"courseCode\": \"TST72652\",\n            \"date_created\": \"2026-05-17\",\n            \"dfID\": 604,\n            \"dtID\": 5412,\n            \"fname\": \"Samantha\",\n            \"lname\": \"Garcia\",\n            \"parentpostID\": 5411,\n            \"replies\": [],\n            \"threadbody\": \"This is a Postman workflow reply.\",\n            \"topic\": \"Postman Reply\",\n            \"userID\": 200000000\n        },\n        {\n            \"courseCode\": \"TST72652\",\n            \"date_created\": \"2026-05-17\",\n            \"dfID\": 604,\n            \"dtID\": 5413,\n            \"fname\": \"Samantha\",\n            \"lname\": \"Garcia\",\n            \"parentpostID\": 5411,\n            \"replies\": [],\n            \"threadbody\": \"This is a Postman workflow reply.\",\n            \"topic\": \"Postman Reply\",\n            \"userID\": 200000000\n        }\n    ],\n    \"threadbody\": \"This is a top-level Postman workflow thread.\",\n    \"topic\": \"Postman Thread\",\n    \"userID\": 620100001\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Calendar Events",
+      "item": [
+        {
+          "name": "POST /courses/{{createdCourseCode}}/calendar-events",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "const eventID = json.eventID || json.calendarEventID || json.id || json.event_id || (json.event && json.event.eventID) || (json.event && json.event.id);",
+                  "pm.environment.set('createdCalendarEventID', eventID);",
+                  "pm.test('calendar event id captured', function () { pm.expect(pm.environment.get('createdCalendarEventID')).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventDate\": \"2026-05-01\",\n  \"eventTitle\": \"Postman Due Date\",\n  \"secItemID\": \"{{createdSecItemID}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/calendar-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "calendar-events"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /courses/{{createdCourseCode}}/calendar-events",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"eventDate\": \"2026-05-01\",\n  \"eventTitle\": \"Postman Due Date\",\n  \"secItemID\": \"{{createdSecItemID}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/calendar-events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "calendar-events"
+                  ]
+                }
+              },
+              "status": "CREATED",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:24:30 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "180"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"calendarID\": 302,\n    \"courseCode\": \"TST72652\",\n    \"eventDate\": \"2026-05-01\",\n    \"eventID\": 3435,\n    \"eventTitle\": \"Postman Due Date\",\n    \"message\": \"Calendar event created successfully\",\n    \"secItemID\": 7736\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /courses/{{createdCourseCode}}/calendar-events",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('calendar event appears', function () { pm.expect(json.some(e => String(e.eventID) === String(pm.environment.get('createdCalendarEventID')))).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/calendar-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{createdCourseCode}}",
+                "calendar-events"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /courses/{{createdCourseCode}}/calendar-events",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courses/{{createdCourseCode}}/calendar-events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courses",
+                    "{{createdCourseCode}}",
+                    "calendar-events"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:24:50 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "191"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"calendarID\": 302,\n        \"courseCode\": \"TST72652\",\n        \"courseName\": \"Postman Workflow 72652\",\n        \"eventDate\": \"Fri, 01 May 2026 00:00:00 GMT\",\n        \"eventID\": 3435,\n        \"eventTitle\": \"Postman Due Date\",\n        \"secItemID\": 7736\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/calendar-events",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('student calendar returned', function () { pm.expect(json).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/{{createdStudentID}}/calendar-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "{{createdStudentID}}",
+                "calendar-events"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /students/{{createdStudentID}}/calendar-events",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/students/{{createdStudentID}}/calendar-events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "students",
+                    "{{createdStudentID}}",
+                    "calendar-events"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:25:44 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "210"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"calendarID\": 302,\n        \"courseCode\": \"TST72652\",\n        \"courseName\": \"Postman Workflow 72652\",\n        \"eventDate\": \"Fri, 01 May 2026 00:00:00 GMT\",\n        \"eventID\": 3435,\n        \"eventTitle\": \"Postman Due Date\",\n        \"secItemID\": 7736,\n        \"userID\": 620100001\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/calendar-events?date=2026-05-01",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('date-filtered calendar returned', function () { pm.expect(json).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/{{createdStudentID}}/calendar-events?date=2026-05-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "{{createdStudentID}}",
+                "calendar-events"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-05-01"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /students/{{createdStudentID}}/calendar-events?date=2026-05-01",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/students/{{createdStudentID}}/calendar-events?date=2026-05-01",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "students",
+                    "{{createdStudentID}}",
+                    "calendar-events"
+                  ],
+                  "query": [
+                    {
+                      "key": "date",
+                      "value": "2026-05-01"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:26:04 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "210"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"calendarID\": 302,\n        \"courseCode\": \"TST72652\",\n        \"courseName\": \"Postman Workflow 72652\",\n        \"eventDate\": \"Fri, 01 May 2026 00:00:00 GMT\",\n        \"eventID\": 3435,\n        \"eventTitle\": \"Postman Due Date\",\n        \"secItemID\": 7736,\n        \"userID\": 620100001\n    }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 Assignments And Grades",
+      "item": [
+        {
+          "name": "POST /assignments/{{createdSecItemID}}/submissions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('createdSubmissionID', json.subID);",
+                  "pm.test('submission id captured', function () { pm.expect(pm.environment.get('createdSubmissionID')).to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subText\": \"My Postman workflow submission.\",\n  \"subContent\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{createdSecItemID}}/submissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assignments",
+                "{{createdSecItemID}}",
+                "submissions"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "POST /assignments/{{createdSecItemID}}/submissions",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"subText\": \"My Postman workflow submission.\",\n  \"subContent\": null\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/assignments/{{createdSecItemID}}/submissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "assignments",
+                    "{{createdSecItemID}}",
+                    "submissions"
+                  ]
+                }
+              },
+              "status": "CREATED",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:26:34 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "83"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Submission created\",\n    \"secItemID\": 7736,\n    \"subID\": 38715,\n    \"userID\": 620100001\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /submissions/{{createdSubmissionID}}/grade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('course grade returned', function () { pm.expect(json).to.have.property('courseGrade', 88); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{lecturerEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{lecturerPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": 88\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/submissions/{{createdSubmissionID}}/grade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "submissions",
+                "{{createdSubmissionID}}",
+                "grade"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "PUT /submissions/{{createdSubmissionID}}/grade",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"grade\": 88\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/submissions/{{createdSubmissionID}}/grade",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "submissions",
+                    "{{createdSubmissionID}}",
+                    "grade"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:26:56 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "225"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"courseGrade\": 88,\n    \"message\": \"Submission graded successfully\",\n    \"submission\": {\n        \"grade\": 88,\n        \"secItemID\": 7736,\n        \"subID\": 38715,\n        \"subText\": \"My Postman workflow submission.\",\n        \"submDate\": \"Sun, 17 May 2026 00:00:00 GMT\",\n        \"userID\": 620100001\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/grades",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('grades include created course', function () { pm.expect(json.some(g => g.courseCode === pm.environment.get('createdCourseCode'))).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/{{createdStudentID}}/grades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "{{createdStudentID}}",
+                "grades"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /students/{{createdStudentID}}/grades",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/students/{{createdStudentID}}/grades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "students",
+                    "{{createdStudentID}}",
+                    "grades"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:09:40 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "41"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"TST72652\",\n        \"grade\": null\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /students/{{createdStudentID}}/{{createdCourseCode}}/grades",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('course grade is 88', function () { pm.expect(json[0]).to.have.property('grade', 88); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{createdStudentEmail}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{createdStudentPassword}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/{{createdStudentID}}/{{createdCourseCode}}/grades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "{{createdStudentID}}",
+                "{{createdCourseCode}}",
+                "grades"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /students/{{createdStudentID}}/{{createdCourseCode}}/grades",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/students/{{createdStudentID}}/{{createdCourseCode}}/grades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "students",
+                    "{{createdStudentID}}",
+                    "{{createdCourseCode}}",
+                    "grades"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:27:18 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "15"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"grade\": 88\n    }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 Reports",
+      "item": [
+        {
+          "name": "GET /reports/courses-50",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports/courses-50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "courses-50"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /reports/courses-50",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/courses-50",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "courses-50"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:10:07 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "14102"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"courseCode\": \"ACCT0001\",\n        \"student_count\": 1520\n    },\n    {\n        \"courseCode\": \"ACCT0002\",\n        \"student_count\": 1478\n    },\n    {\n        \"courseCode\": \"ACCT0003\",\n        \"student_count\": 1503\n    },\n    {\n        \"courseCode\": \"ACCT0004\",\n        \"student_count\": 1523\n    },\n    {\n        \"courseCode\": \"ACCT0005\",\n        \"student_count\": 1514\n    },\n    {\n        \"courseCode\": \"ACCT0006\",\n        \"student_count\": 1519\n    },\n    {\n        \"courseCode\": \"ACCT0007\",\n        \"student_count\": 1468\n    },\n    {\n        \"courseCode\": \"ACCT0008\",\n        \"student_count\": 1506\n    },\n    {\n        \"courseCode\": \"ACCT0009\",\n        \"student_count\": 1552\n    },\n    {\n        \"courseCode\": \"ACCT0010\",\n        \"student_count\": 1517\n    },\n    {\n        \"courseCode\": \"ACCT0011\",\n        \"student_count\": 1540\n    },\n    {\n        \"courseCode\": \"ACCT0012\",\n        \"student_count\": 1495\n    },\n    {\n        \"courseCode\": \"ACCT0013\",\n        \"student_count\": 1538\n    },\n    {\n        \"courseCode\": \"ACCT0014\",\n        \"student_count\": 1462\n    },\n    {\n        \"courseCode\": \"ACCT0015\",\n        \"student_count\": 1477\n    },\n    {\n        \"courseCode\": \"AGRI0001\",\n        \"student_count\": 1482\n    },\n    {\n        \"courseCode\": \"AGRI0002\",\n        \"student_count\": 1482\n    },\n    {\n        \"courseCode\": \"AGRI0003\",\n        \"student_count\": 1478\n    },\n    {\n        \"courseCode\": \"AGRI0004\",\n        \"student_count\": 1512\n    },\n    {\n        \"courseCode\": \"AGRI0005\",\n        \"student_count\": 1509\n    },\n    {\n        \"courseCode\": \"AGRI0006\",\n        \"student_count\": 1501\n    },\n    {\n        \"courseCode\": \"AGRI0007\",\n        \"student_count\": 1545\n    },\n    {\n        \"courseCode\": \"AGRI0008\",\n        \"student_count\": 1444\n    },\n    {\n        \"courseCode\": \"AGRI0009\",\n        \"student_count\": 1483\n    },\n    {\n        \"courseCode\": \"AGRI0010\",\n        \"student_count\": 1541\n    },\n    {\n        \"courseCode\": \"AGRI0011\",\n        \"student_count\": 1455\n    },\n    {\n        \"courseCode\": \"AGRI0012\",\n        \"student_count\": 1521\n    },\n    {\n        \"courseCode\": \"AGRI0013\",\n        \"student_count\": 1527\n    },\n    {\n        \"courseCode\": \"AGRI0014\",\n        \"student_count\": 1424\n    },\n    {\n        \"courseCode\": \"AGRI0015\",\n        \"student_count\": 1530\n    },\n    {\n        \"courseCode\": \"ARCH0001\",\n        \"student_count\": 1533\n    },\n    {\n        \"courseCode\": \"ARCH0002\",\n        \"student_count\": 1485\n    },\n    {\n        \"courseCode\": \"ARCH0003\",\n        \"student_count\": 1451\n    },\n    {\n        \"courseCode\": \"ARCH0004\",\n        \"student_count\": 1532\n    },\n    {\n        \"courseCode\": \"ARCH0005\",\n        \"student_count\": 1485\n    },\n    {\n        \"courseCode\": \"ARCH0006\",\n        \"student_count\": 1496\n    },\n    {\n        \"courseCode\": \"ARCH0007\",\n        \"student_count\": 1510\n    },\n    {\n        \"courseCode\": \"ARCH0008\",\n        \"student_count\": 1417\n    },\n    {\n        \"courseCode\": \"ARCH0009\",\n        \"student_count\": 1425\n    },\n    {\n        \"courseCode\": \"ARCH0010\",\n        \"student_count\": 1492\n    },\n    {\n        \"courseCode\": \"ARCH0011\",\n        \"student_count\": 1441\n    },\n    {\n        \"courseCode\": \"ARCH0012\",\n        \"student_count\": 1453\n    },\n    {\n        \"courseCode\": \"ARCH0013\",\n        \"student_count\": 1539\n    },\n    {\n        \"courseCode\": \"ARCH0014\",\n        \"student_count\": 1485\n    },\n    {\n        \"courseCode\": \"ARCH0015\",\n        \"student_count\": 1485\n    },\n    {\n        \"courseCode\": \"BIOL0001\",\n        \"student_count\": 1483\n    },\n    {\n        \"courseCode\": \"BIOL0002\",\n        \"student_count\": 1516\n    },\n    {\n        \"courseCode\": \"BIOL0003\",\n        \"student_count\": 1497\n    },\n    {\n        \"courseCode\": \"BIOL0004\",\n        \"student_count\": 1430\n    },\n    {\n        \"courseCode\": \"BIOL0005\",\n        \"student_count\": 1487\n    },\n    {\n        \"courseCode\": \"BIOL0006\",\n        \"student_count\": 1487\n    },\n    {\n        \"courseCode\": \"BIOL0007\",\n        \"student_count\": 1481\n    },\n    {\n        \"courseCode\": \"BIOL0008\",\n        \"student_count\": 1523\n    },\n    {\n        \"courseCode\": \"BIOL0009\",\n        \"student_count\": 1464\n    },\n    {\n        \"courseCode\": \"BIOL0010\",\n        \"student_count\": 1510\n    },\n    {\n        \"courseCode\": \"BIOL0011\",\n        \"student_count\": 1486\n    },\n    {\n        \"courseCode\": \"BIOL0012\",\n        \"student_count\": 1588\n    },\n    {\n        \"courseCode\": \"BIOL0013\",\n        \"student_count\": 1571\n    },\n    {\n        \"courseCode\": \"BIOL0014\",\n        \"student_count\": 1513\n    },\n    {\n        \"courseCode\": \"BIOL0015\",\n        \"student_count\": 1488\n    },\n    {\n        \"courseCode\": \"CHEM0001\",\n        \"student_count\": 1510\n    },\n    {\n        \"courseCode\": \"CHEM0002\",\n        \"student_count\": 1465\n    },\n    {\n        \"courseCode\": \"CHEM0003\",\n        \"student_count\": 1464\n    },\n    {\n        \"courseCode\": \"CHEM0004\",\n        \"student_count\": 1468\n    },\n    {\n        \"courseCode\": \"CHEM0005\",\n        \"student_count\": 1489\n    },\n    {\n        \"courseCode\": \"CHEM0006\",\n        \"student_count\": 1455\n    },\n    {\n        \"courseCode\": \"CHEM0007\",\n        \"student_count\": 1595\n    },\n    {\n        \"courseCode\": \"CHEM0008\",\n        \"student_count\": 1589\n    },\n    {\n        \"courseCode\": \"CHEM0009\",\n        \"student_count\": 1518\n    },\n    {\n        \"courseCode\": \"CHEM0010\",\n        \"student_count\": 1459\n    },\n    {\n        \"courseCode\": \"CHEM0011\",\n        \"student_count\": 1513\n    },\n    {\n        \"courseCode\": \"CHEM0012\",\n        \"student_count\": 1491\n    },\n    {\n        \"courseCode\": \"CHEM0013\",\n        \"student_count\": 1460\n    },\n    {\n        \"courseCode\": \"CHEM0014\",\n        \"student_count\": 1544\n    },\n    {\n        \"courseCode\": \"CHEM0015\",\n        \"student_count\": 1476\n    },\n    {\n        \"courseCode\": \"COMP0001\",\n        \"student_count\": 1520\n    },\n    {\n        \"courseCode\": \"COMP0002\",\n        \"student_count\": 1521\n    },\n    {\n        \"courseCode\": \"COMP0003\",\n        \"student_count\": 1550\n    },\n    {\n        \"courseCode\": \"COMP0004\",\n        \"student_count\": 1537\n    },\n    {\n        \"courseCode\": \"COMP0005\",\n        \"student_count\": 1489\n    },\n    {\n        \"courseCode\": \"COMP0006\",\n        \"student_count\": 1510\n    },\n    {\n        \"courseCode\": \"COMP0007\",\n        \"student_count\": 1498\n    },\n    {\n        \"courseCode\": \"COMP0008\",\n        \"student_count\": 1509\n    },\n    {\n        \"courseCode\": \"COMP0009\",\n        \"student_count\": 1423\n    },\n    {\n        \"courseCode\": \"COMP0010\",\n        \"student_count\": 1519\n    },\n    {\n        \"courseCode\": \"COMP0011\",\n        \"student_count\": 1534\n    },\n    {\n        \"courseCode\": \"COMP0012\",\n        \"student_count\": 1477\n    },\n    {\n        \"courseCode\": \"COMP0013\",\n        \"student_count\": 1470\n    },\n    {\n        \"courseCode\": \"COMP0014\",\n        \"student_count\": 1482\n    },\n    {\n        \"courseCode\": \"COMP0015\",\n        \"student_count\": 1521\n    },\n    {\n        \"courseCode\": \"ECON0001\",\n        \"student_count\": 1508\n    },\n    {\n        \"courseCode\": \"ECON0002\",\n        \"student_count\": 1438\n    },\n    {\n        \"courseCode\": \"ECON0003\",\n        \"student_count\": 1523\n    },\n    {\n        \"courseCode\": \"ECON0004\",\n        \"student_count\": 1544\n    },\n    {\n        \"courseCode\": \"ECON0005\",\n        \"student_count\": 1524\n    },\n    {\n        \"courseCode\": \"ECON0006\",\n        \"student_count\": 1576\n    },\n    {\n        \"courseCode\": \"ECON0007\",\n        \"student_count\": 1492\n    },\n    {\n        \"courseCode\": \"ECON0008\",\n        \"student_count\": 1524\n    },\n    {\n        \"courseCode\": \"ECON0009\",\n        \"student_count\": 1481\n    },\n    {\n        \"courseCode\": \"ECON0010\",\n        \"student_count\": 1551\n    },\n    {\n        \"courseCode\": \"ECON0011\",\n        \"student_count\": 1461\n    },\n    {\n        \"courseCode\": \"ECON0012\",\n        \"student_count\": 1447\n    },\n    {\n        \"courseCode\": \"ECON0013\",\n        \"student_count\": 1474\n    },\n    {\n        \"courseCode\": \"ECON0014\",\n        \"student_count\": 1447\n    },\n    {\n        \"courseCode\": \"ECON0015\",\n        \"student_count\": 1482\n    },\n    {\n        \"courseCode\": \"EDUC0001\",\n        \"student_count\": 1487\n    },\n    {\n        \"courseCode\": \"EDUC0002\",\n        \"student_count\": 1512\n    },\n    {\n        \"courseCode\": \"EDUC0003\",\n        \"student_count\": 1504\n    },\n    {\n        \"courseCode\": \"EDUC0004\",\n        \"student_count\": 1434\n    },\n    {\n        \"courseCode\": \"EDUC0005\",\n        \"student_count\": 1440\n    },\n    {\n        \"courseCode\": \"EDUC0006\",\n        \"student_count\": 1548\n    },\n    {\n        \"courseCode\": \"EDUC0007\",\n        \"student_count\": 1521\n    },\n    {\n        \"courseCode\": \"EDUC0008\",\n        \"student_count\": 1492\n    },\n    {\n        \"courseCode\": \"EDUC0009\",\n        \"student_count\": 1540\n    },\n    {\n        \"courseCode\": \"EDUC0010\",\n        \"student_count\": 1476\n    },\n    {\n        \"courseCode\": \"EDUC0011\",\n        \"student_count\": 1493\n    },\n    {\n        \"courseCode\": \"EDUC0012\",\n        \"student_count\": 1508\n    },\n    {\n        \"courseCode\": \"EDUC0013\",\n        \"student_count\": 1526\n    },\n    {\n        \"courseCode\": \"EDUC0014\",\n        \"student_count\": 1531\n    },\n    {\n        \"courseCode\": \"EDUC0015\",\n        \"student_count\": 1481\n    },\n    {\n        \"courseCode\": \"ENGR0001\",\n        \"student_count\": 1493\n    },\n    {\n        \"courseCode\": \"ENGR0002\",\n        \"student_count\": 1491\n    },\n    {\n        \"courseCode\": \"ENGR0003\",\n        \"student_count\": 1481\n    },\n    {\n        \"courseCode\": \"ENGR0004\",\n        \"student_count\": 1424\n    },\n    {\n        \"courseCode\": \"ENGR0005\",\n        \"student_count\": 1497\n    },\n    {\n        \"courseCode\": \"ENGR0006\",\n        \"student_count\": 1522\n    },\n    {\n        \"courseCode\": \"ENGR0007\",\n        \"student_count\": 1444\n    },\n    {\n        \"courseCode\": \"ENGR0008\",\n        \"student_count\": 1541\n    },\n    {\n        \"courseCode\": \"ENGR0009\",\n        \"student_count\": 1465\n    },\n    {\n        \"courseCode\": \"ENGR0010\",\n        \"student_count\": 1490\n    },\n    {\n        \"courseCode\": \"ENGR0011\",\n        \"student_count\": 1474\n    },\n    {\n        \"courseCode\": \"ENGR0012\",\n        \"student_count\": 1450\n    },\n    {\n        \"courseCode\": \"ENGR0013\",\n        \"student_count\": 1504\n    },\n    {\n        \"courseCode\": \"ENGR0014\",\n        \"student_count\": 1518\n    },\n    {\n        \"courseCode\": \"ENGR0015\",\n        \"student_count\": 1481\n    },\n    {\n        \"courseCode\": \"HIST0001\",\n        \"student_count\": 1544\n    },\n    {\n        \"courseCode\": \"HIST0002\",\n        \"student_count\": 1529\n    },\n    {\n        \"courseCode\": \"HIST0003\",\n        \"student_count\": 1496\n    },\n    {\n        \"courseCode\": \"HIST0004\",\n        \"student_count\": 1502\n    },\n    {\n        \"courseCode\": \"HIST0005\",\n        \"student_count\": 1508\n    },\n    {\n        \"courseCode\": \"HIST0006\",\n        \"student_count\": 1495\n    },\n    {\n        \"courseCode\": \"HIST0007\",\n        \"student_count\": 1598\n    },\n    {\n        \"courseCode\": \"HIST0008\",\n        \"student_count\": 1476\n    },\n    {\n        \"courseCode\": \"HIST0009\",\n        \"student_count\": 1548\n    },\n    {\n        \"courseCode\": \"HIST0010\",\n        \"student_count\": 1477\n    },\n    {\n        \"courseCode\": \"HIST0011\",\n        \"student_count\": 1478\n    },\n    {\n        \"courseCode\": \"HIST0012\",\n        \"student_count\": 1528\n    },\n    {\n        \"courseCode\": \"HIST0013\",\n        \"student_count\": 1484\n    },\n    {\n        \"courseCode\": \"HIST0014\",\n        \"student_count\": 1544\n    },\n    {\n        \"courseCode\": \"HIST0015\",\n        \"student_count\": 1520\n    },\n    {\n        \"courseCode\": \"LAW00001\",\n        \"student_count\": 1485\n    },\n    {\n        \"courseCode\": \"LAW00002\",\n        \"student_count\": 1482\n    },\n    {\n        \"courseCode\": \"LAW00003\",\n        \"student_count\": 1477\n    },\n    {\n        \"courseCode\": \"LAW00004\",\n        \"student_count\": 1477\n    },\n    {\n        \"courseCode\": \"LAW00005\",\n        \"student_count\": 1455\n    },\n    {\n        \"courseCode\": \"LAW00006\",\n        \"student_count\": 1512\n    },\n    {\n        \"courseCode\": \"LAW00007\",\n        \"student_count\": 1469\n    },\n    {\n        \"courseCode\": \"LAW00008\",\n        \"student_count\": 1477\n    },\n    {\n        \"courseCode\": \"LAW00009\",\n        \"student_count\": 1558\n    },\n    {\n        \"courseCode\": \"LAW00010\",\n        \"student_count\": 1480\n    },\n    {\n        \"courseCode\": \"LAW00011\",\n        \"student_count\": 1555\n    },\n    {\n        \"courseCode\": \"LAW00012\",\n        \"student_count\": 1505\n    },\n    {\n        \"courseCode\": \"LAW00013\",\n        \"student_count\": 1471\n    },\n    {\n        \"courseCode\": \"LAW00014\",\n        \"student_count\": 1479\n    },\n    {\n        \"courseCode\": \"LAW00015\",\n        \"student_count\": 1606\n    },\n    {\n        \"courseCode\": \"LITE0001\",\n        \"student_count\": 1495\n    },\n    {\n        \"courseCode\": \"LITE0002\",\n        \"student_count\": 1493\n    },\n    {\n        \"courseCode\": \"LITE0003\",\n        \"student_count\": 1457\n    },\n    {\n        \"courseCode\": \"LITE0004\",\n        \"student_count\": 1444\n    },\n    {\n        \"courseCode\": \"LITE0005\",\n        \"student_count\": 1461\n    },\n    {\n        \"courseCode\": \"LITE0006\",\n        \"student_count\": 1468\n    },\n    {\n        \"courseCode\": \"LITE0007\",\n        \"student_count\": 1480\n    },\n    {\n        \"courseCode\": \"LITE0008\",\n        \"student_count\": 1501\n    },\n    {\n        \"courseCode\": \"LITE0009\",\n        \"student_count\": 1485\n    },\n    {\n        \"courseCode\": \"LITE0010\",\n        \"student_count\": 1489\n    },\n    {\n        \"courseCode\": \"LITE0011\",\n        \"student_count\": 1493\n    },\n    {\n        \"courseCode\": \"LITE0012\",\n        \"student_count\": 1459\n    },\n    {\n        \"courseCode\": \"LITE0013\",\n        \"student_count\": 1542\n    },\n    {\n        \"courseCode\": \"LITE0014\",\n        \"student_count\": 1472\n    },\n    {\n        \"courseCode\": \"LITE0015\",\n        \"student_count\": 1517\n    },\n    {\n        \"courseCode\": \"MATH0001\",\n        \"student_count\": 1507\n    },\n    {\n        \"courseCode\": \"MATH0002\",\n        \"student_count\": 1567\n    },\n    {\n        \"courseCode\": \"MATH0003\",\n        \"student_count\": 1489\n    },\n    {\n        \"courseCode\": \"MATH0004\",\n        \"student_count\": 1463\n    },\n    {\n        \"courseCode\": \"MATH0005\",\n        \"student_count\": 1486\n    },\n    {\n        \"courseCode\": \"MATH0006\",\n        \"student_count\": 1509\n    },\n    {\n        \"courseCode\": \"MATH0007\",\n        \"student_count\": 1428\n    },\n    {\n        \"courseCode\": \"MATH0008\",\n        \"student_count\": 1514\n    },\n    {\n        \"courseCode\": \"MATH0009\",\n        \"student_count\": 1506\n    },\n    {\n        \"courseCode\": \"MATH0010\",\n        \"student_count\": 1453\n    },\n    {\n        \"courseCode\": \"MATH0011\",\n        \"student_count\": 1539\n    },\n    {\n        \"courseCode\": \"MATH0012\",\n        \"student_count\": 1531\n    },\n    {\n        \"courseCode\": \"MATH0013\",\n        \"student_count\": 1469\n    },\n    {\n        \"courseCode\": \"MATH0014\",\n        \"student_count\": 1507\n    },\n    {\n        \"courseCode\": \"MATH0015\",\n        \"student_count\": 1438\n    },\n    {\n        \"courseCode\": \"MEDI0001\",\n        \"student_count\": 1466\n    },\n    {\n        \"courseCode\": \"MEDI0002\",\n        \"student_count\": 1441\n    },\n    {\n        \"courseCode\": \"MEDI0003\",\n        \"student_count\": 1586\n    },\n    {\n        \"courseCode\": \"MEDI0004\",\n        \"student_count\": 1558\n    },\n    {\n        \"courseCode\": \"MEDI0005\",\n        \"student_count\": 1489\n    },\n    {\n        \"courseCode\": \"MEDI0006\",\n        \"student_count\": 1494\n    },\n    {\n        \"courseCode\": \"MEDI0007\",\n        \"student_count\": 1489\n    },\n    {\n        \"courseCode\": \"MEDI0008\",\n        \"student_count\": 1528\n    },\n    {\n        \"courseCode\": \"MEDI0009\",\n        \"student_count\": 1507\n    },\n    {\n        \"courseCode\": \"MEDI0010\",\n        \"student_count\": 1550\n    },\n    {\n        \"courseCode\": \"MEDI0011\",\n        \"student_count\": 1582\n    },\n    {\n        \"courseCode\": \"MEDI0012\",\n        \"student_count\": 1476\n    },\n    {\n        \"courseCode\": \"MEDI0013\",\n        \"student_count\": 1513\n    },\n    {\n        \"courseCode\": \"MEDI0014\",\n        \"student_count\": 1593\n    },\n    {\n        \"courseCode\": \"MEDI0015\",\n        \"student_count\": 1448\n    },\n    {\n        \"courseCode\": \"MGMT0001\",\n        \"student_count\": 1502\n    },\n    {\n        \"courseCode\": \"MGMT0002\",\n        \"student_count\": 1513\n    },\n    {\n        \"courseCode\": \"MGMT0003\",\n        \"student_count\": 1509\n    },\n    {\n        \"courseCode\": \"MGMT0004\",\n        \"student_count\": 1493\n    },\n    {\n        \"courseCode\": \"MGMT0005\",\n        \"student_count\": 1466\n    },\n    {\n        \"courseCode\": \"MGMT0006\",\n        \"student_count\": 1434\n    },\n    {\n        \"courseCode\": \"MGMT0007\",\n        \"student_count\": 1558\n    },\n    {\n        \"courseCode\": \"MGMT0008\",\n        \"student_count\": 1444\n    },\n    {\n        \"courseCode\": \"MGMT0009\",\n        \"student_count\": 1442\n    },\n    {\n        \"courseCode\": \"MGMT0010\",\n        \"student_count\": 1479\n    },\n    {\n        \"courseCode\": \"MGMT0011\",\n        \"student_count\": 1487\n    },\n    {\n        \"courseCode\": \"MGMT0012\",\n        \"student_count\": 1486\n    },\n    {\n        \"courseCode\": \"MGMT0013\",\n        \"student_count\": 1473\n    },\n    {\n        \"courseCode\": \"MGMT0014\",\n        \"student_count\": 1448\n    },\n    {\n        \"courseCode\": \"MGMT0015\",\n        \"student_count\": 1538\n    },\n    {\n        \"courseCode\": \"NURS0001\",\n        \"student_count\": 1511\n    },\n    {\n        \"courseCode\": \"NURS0002\",\n        \"student_count\": 1486\n    },\n    {\n        \"courseCode\": \"NURS0003\",\n        \"student_count\": 1525\n    },\n    {\n        \"courseCode\": \"NURS0004\",\n        \"student_count\": 1470\n    },\n    {\n        \"courseCode\": \"NURS0005\",\n        \"student_count\": 1541\n    },\n    {\n        \"courseCode\": \"NURS0006\",\n        \"student_count\": 1454\n    },\n    {\n        \"courseCode\": \"NURS0007\",\n        \"student_count\": 1496\n    },\n    {\n        \"courseCode\": \"NURS0008\",\n        \"student_count\": 1506\n    },\n    {\n        \"courseCode\": \"NURS0009\",\n        \"student_count\": 1481\n    },\n    {\n        \"courseCode\": \"NURS0010\",\n        \"student_count\": 1496\n    },\n    {\n        \"courseCode\": \"NURS0011\",\n        \"student_count\": 1414\n    },\n    {\n        \"courseCode\": \"NURS0012\",\n        \"student_count\": 1514\n    },\n    {\n        \"courseCode\": \"NURS0013\",\n        \"student_count\": 1455\n    },\n    {\n        \"courseCode\": \"NURS0014\",\n        \"student_count\": 1515\n    },\n    {\n        \"courseCode\": \"NURS0015\",\n        \"student_count\": 1518\n    },\n    {\n        \"courseCode\": \"PHIL0001\",\n        \"student_count\": 1510\n    },\n    {\n        \"courseCode\": \"PHIL0002\",\n        \"student_count\": 1544\n    },\n    {\n        \"courseCode\": \"PHIL0003\",\n        \"student_count\": 1499\n    },\n    {\n        \"courseCode\": \"PHIL0004\",\n        \"student_count\": 1433\n    },\n    {\n        \"courseCode\": \"PHIL0005\",\n        \"student_count\": 1522\n    },\n    {\n        \"courseCode\": \"PHIL0006\",\n        \"student_count\": 1407\n    },\n    {\n        \"courseCode\": \"PHIL0007\",\n        \"student_count\": 1539\n    },\n    {\n        \"courseCode\": \"PHIL0008\",\n        \"student_count\": 1497\n    },\n    {\n        \"courseCode\": \"PHIL0009\",\n        \"student_count\": 1496\n    },\n    {\n        \"courseCode\": \"PHIL0010\",\n        \"student_count\": 1546\n    },\n    {\n        \"courseCode\": \"PHIL0011\",\n        \"student_count\": 1472\n    },\n    {\n        \"courseCode\": \"PHIL0012\",\n        \"student_count\": 1544\n    },\n    {\n        \"courseCode\": \"PHIL0013\",\n        \"student_count\": 1503\n    },\n    {\n        \"courseCode\": \"PHIL0014\",\n        \"student_count\": 1518\n    },\n    {\n        \"courseCode\": \"PHIL0015\",\n        \"student_count\": 1494\n    },\n    {\n        \"courseCode\": \"PHYS0001\",\n        \"student_count\": 1562\n    },\n    {\n        \"courseCode\": \"PHYS0002\",\n        \"student_count\": 1558\n    },\n    {\n        \"courseCode\": \"PHYS0003\",\n        \"student_count\": 1537\n    },\n    {\n        \"courseCode\": \"PHYS0004\",\n        \"student_count\": 1498\n    },\n    {\n        \"courseCode\": \"PHYS0005\",\n        \"student_count\": 1550\n    },\n    {\n        \"courseCode\": \"PHYS0006\",\n        \"student_count\": 1466\n    },\n    {\n        \"courseCode\": \"PHYS0007\",\n        \"student_count\": 1518\n    },\n    {\n        \"courseCode\": \"PHYS0008\",\n        \"student_count\": 1447\n    },\n    {\n        \"courseCode\": \"PHYS0009\",\n        \"student_count\": 1503\n    },\n    {\n        \"courseCode\": \"PHYS0010\",\n        \"student_count\": 1533\n    },\n    {\n        \"courseCode\": \"PHYS0011\",\n        \"student_count\": 1518\n    },\n    {\n        \"courseCode\": \"PHYS0012\",\n        \"student_count\": 1457\n    },\n    {\n        \"courseCode\": \"PHYS0013\",\n        \"student_count\": 1540\n    },\n    {\n        \"courseCode\": \"PHYS0014\",\n        \"student_count\": 1513\n    },\n    {\n        \"courseCode\": \"PHYS0015\",\n        \"student_count\": 1576\n    },\n    {\n        \"courseCode\": \"PSYC0001\",\n        \"student_count\": 1482\n    },\n    {\n        \"courseCode\": \"PSYC0002\",\n        \"student_count\": 1452\n    },\n    {\n        \"courseCode\": \"PSYC0003\",\n        \"student_count\": 1478\n    },\n    {\n        \"courseCode\": \"PSYC0004\",\n        \"student_count\": 1501\n    },\n    {\n        \"courseCode\": \"PSYC0005\",\n        \"student_count\": 1490\n    },\n    {\n        \"courseCode\": \"PSYC0006\",\n        \"student_count\": 1544\n    },\n    {\n        \"courseCode\": \"PSYC0007\",\n        \"student_count\": 1511\n    },\n    {\n        \"courseCode\": \"PSYC0008\",\n        \"student_count\": 1521\n    },\n    {\n        \"courseCode\": \"PSYC0009\",\n        \"student_count\": 1486\n    },\n    {\n        \"courseCode\": \"PSYC0010\",\n        \"student_count\": 1573\n    },\n    {\n        \"courseCode\": \"PSYC0011\",\n        \"student_count\": 1477\n    },\n    {\n        \"courseCode\": \"PSYC0012\",\n        \"student_count\": 1499\n    },\n    {\n        \"courseCode\": \"PSYC0013\",\n        \"student_count\": 1486\n    },\n    {\n        \"courseCode\": \"PSYC0014\",\n        \"student_count\": 1453\n    },\n    {\n        \"courseCode\": \"PSYC0015\",\n        \"student_count\": 1499\n    },\n    {\n        \"courseCode\": \"SOCI0001\",\n        \"student_count\": 1455\n    },\n    {\n        \"courseCode\": \"SOCI0002\",\n        \"student_count\": 1505\n    },\n    {\n        \"courseCode\": \"SOCI0003\",\n        \"student_count\": 1511\n    },\n    {\n        \"courseCode\": \"SOCI0004\",\n        \"student_count\": 1500\n    },\n    {\n        \"courseCode\": \"SOCI0005\",\n        \"student_count\": 1486\n    },\n    {\n        \"courseCode\": \"SOCI0006\",\n        \"student_count\": 1541\n    },\n    {\n        \"courseCode\": \"SOCI0007\",\n        \"student_count\": 1514\n    },\n    {\n        \"courseCode\": \"SOCI0008\",\n        \"student_count\": 1570\n    },\n    {\n        \"courseCode\": \"SOCI0009\",\n        \"student_count\": 1508\n    },\n    {\n        \"courseCode\": \"SOCI0010\",\n        \"student_count\": 1515\n    },\n    {\n        \"courseCode\": \"SOCI0011\",\n        \"student_count\": 1502\n    },\n    {\n        \"courseCode\": \"SOCI0012\",\n        \"student_count\": 1513\n    },\n    {\n        \"courseCode\": \"SOCI0013\",\n        \"student_count\": 1474\n    },\n    {\n        \"courseCode\": \"SOCI0014\",\n        \"student_count\": 1536\n    },\n    {\n        \"courseCode\": \"SOCI0015\",\n        \"student_count\": 1452\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/students-5plus",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports/students-5plus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "students-5plus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /reports/lecturers-3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports/lecturers-3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "lecturers-3"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /reports/lecturers-3",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/lecturers-3",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "lecturers-3"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:12:30 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "2135"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"fname\": \"Shelia\",\n        \"lname\": \"Daniels\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Audrey\",\n        \"lname\": \"Cortez\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Victoria\",\n        \"lname\": \"Schneider\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Anthony\",\n        \"lname\": \"Cooper\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Olivia\",\n        \"lname\": \"Franklin\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Janet\",\n        \"lname\": \"Clark\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Linda\",\n        \"lname\": \"Davis\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Andrew\",\n        \"lname\": \"Huber\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Elizabeth\",\n        \"lname\": \"Henry\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Julie\",\n        \"lname\": \"James\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Benjamin\",\n        \"lname\": \"Hopkins\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Michael\",\n        \"lname\": \"Miller\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"David\",\n        \"lname\": \"Guzman\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Peter\",\n        \"lname\": \"Ward\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Sheryl\",\n        \"lname\": \"Dixon\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Claudia\",\n        \"lname\": \"Valentine\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Megan\",\n        \"lname\": \"Clements\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Sandy\",\n        \"lname\": \"Harris\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Natalie\",\n        \"lname\": \"Lynch\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Brandi\",\n        \"lname\": \"Jackson\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Kara\",\n        \"lname\": \"Cole\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Hannah\",\n        \"lname\": \"Gordon\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Julie\",\n        \"lname\": \"Jones\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Robert\",\n        \"lname\": \"Woods\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Kimberly\",\n        \"lname\": \"Chen\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Jane\",\n        \"lname\": \"Ramirez\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Teresa\",\n        \"lname\": \"Turner\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Laura\",\n        \"lname\": \"Johnson\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Diana\",\n        \"lname\": \"Bean\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"William\",\n        \"lname\": \"Wagner\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Patrick\",\n        \"lname\": \"Garcia\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Margaret\",\n        \"lname\": \"Moss\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Vanessa\",\n        \"lname\": \"Gross\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Michele\",\n        \"lname\": \"Gonzales\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"John\",\n        \"lname\": \"Garcia\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Cheyenne\",\n        \"lname\": \"Hall\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Jeremy\",\n        \"lname\": \"Perez\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Samantha\",\n        \"lname\": \"Garcia\",\n        \"num_courses\": 4\n    },\n    {\n        \"fname\": \"Scott\",\n        \"lname\": \"Edwards\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Kelsey\",\n        \"lname\": \"Massey\",\n        \"num_courses\": 3\n    },\n    {\n        \"fname\": \"Kelly\",\n        \"lname\": \"Schmidt\",\n        \"num_courses\": 3\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/most-enrolled",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports/most-enrolled",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "most-enrolled"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /reports/most-enrolled",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/most-enrolled",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "most-enrolled"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:13:21 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "1072"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"CourseName\": \"LAW0 Procedure and Evidence\",\n        \"courseCode\": \"LAW00015\",\n        \"department\": \"Law\",\n        \"totalStudents\": 1606\n    },\n    {\n        \"CourseName\": \"HIST Colonial History\",\n        \"courseCode\": \"HIST0007\",\n        \"department\": \"History\",\n        \"totalStudents\": 1598\n    },\n    {\n        \"CourseName\": \"CHEM Polymer Chemistry\",\n        \"courseCode\": \"CHEM0007\",\n        \"department\": \"Chemistry\",\n        \"totalStudents\": 1595\n    },\n    {\n        \"CourseName\": \"MEDI Ophthalmology\",\n        \"courseCode\": \"MEDI0014\",\n        \"department\": \"Medicine\",\n        \"totalStudents\": 1593\n    },\n    {\n        \"CourseName\": \"CHEM Environmental Chemistry\",\n        \"courseCode\": \"CHEM0008\",\n        \"department\": \"Chemistry\",\n        \"totalStudents\": 1589\n    },\n    {\n        \"CourseName\": \"BIOL Marine Biology\",\n        \"courseCode\": \"BIOL0012\",\n        \"department\": \"Biology\",\n        \"totalStudents\": 1588\n    },\n    {\n        \"CourseName\": \"MEDI Biochemistry\",\n        \"courseCode\": \"MEDI0003\",\n        \"department\": \"Medicine\",\n        \"totalStudents\": 1586\n    },\n    {\n        \"CourseName\": \"MEDI Obstetrics\",\n        \"courseCode\": \"MEDI0011\",\n        \"department\": \"Medicine\",\n        \"totalStudents\": 1582\n    },\n    {\n        \"CourseName\": \"PHYS Particle Physics\",\n        \"courseCode\": \"PHYS0015\",\n        \"department\": \"Physics\",\n        \"totalStudents\": 1576\n    },\n    {\n        \"CourseName\": \"ECON Econometrics\",\n        \"courseCode\": \"ECON0006\",\n        \"department\": \"Economics\",\n        \"totalStudents\": 1576\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /reports/top-students-by-average",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('response is JSON', function () { pm.response.to.be.json; });",
+                  "const json = pm.response.json();",
+                  "pm.test('report has rows', function () { pm.expect(json).to.be.an('array').that.is.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports/top-students-by-average",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "top-students-by-average"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "GET /reports/top-students-by-average",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/reports/top-students-by-average",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "reports",
+                    "top-students-by-average"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Server",
+                  "value": "Werkzeug/3.1.8 Python/3.14.2"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 18 May 2026 04:13:30 GMT"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "783"
+                },
+                {
+                  "key": "Access-Control-Allow-Origin",
+                  "value": "http://127.0.0.1:5173"
+                },
+                {
+                  "key": "Vary",
+                  "value": "Origin"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Justin\",\n        \"lname\": \"Dunn\",\n        \"userID\": 620013418\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Derek\",\n        \"lname\": \"Moore\",\n        \"userID\": 620001472\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Jonathan\",\n        \"lname\": \"Martin\",\n        \"userID\": 620024511\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Jared\",\n        \"lname\": \"Gordon\",\n        \"userID\": 620009547\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Maurice\",\n        \"lname\": \"Jenkins\",\n        \"userID\": 620001562\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Charles\",\n        \"lname\": \"Wyatt\",\n        \"userID\": 620009077\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Oscar\",\n        \"lname\": \"Patterson\",\n        \"userID\": 620011958\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Alexandra\",\n        \"lname\": \"Jones\",\n        \"userID\": 620047479\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"Keith\",\n        \"lname\": \"Crawford\",\n        \"userID\": 620025371\n    },\n    {\n        \"avg_grade\": \"100.0000\",\n        \"fname\": \"James\",\n        \"lname\": \"Rice\",\n        \"userID\": 620010469\n    }\n]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
