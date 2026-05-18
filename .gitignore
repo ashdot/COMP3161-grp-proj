@@ -21,6 +21,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Frontend dependencies/build output
+frontend/node_modules/
+frontend/dist/
+frontend/.npm-cache/
+
 # Database (optional)
 *.sqlite3
 

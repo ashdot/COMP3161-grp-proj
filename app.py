@@ -13,6 +13,7 @@ import secrets
 import string
 from flask import Flask
 from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory, jsonify
+from flask_cors import CORS
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from datetime import date, datetime
@@ -23,6 +24,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"])
 
 app.config["JWT_SECRET_KEY"] = "your_jwt_secret_key" 
 jwt = JWTManager(app)
@@ -802,6 +804,43 @@ def create_course():
         conn.rollback()
         if err.errno == DUPLICATE_ENTRY_ERRNO:
             return jsonify({"error": "Course code or name already exists"}), 409
+        return jsonify({"error": str(err)}), 400
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# DELETE /courses/{courseCode} - Basic Auth admin deletes a course and cascades dependents.
+@app.route("/courses/<string:courseCode>", methods=["DELETE"])
+def delete_course(courseCode):
+    user, auth_error = require_basic_auth()
+    if auth_error:
+        return auth_error
+    admin_error = require_admin_user(user)
+    if admin_error:
+        return admin_error
+
+    try:
+        normalized_course_code = clean_course_code(courseCode)
+    except ValueError as err:
+        return jsonify({"error": str(err)}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        if not course_exists(cursor, normalized_course_code):
+            return jsonify({"error": "Course not found"}), 404
+
+        cursor.execute("DELETE FROM Course WHERE courseCode = %s", (normalized_course_code,))
+        conn.commit()
+
+        return jsonify({
+            "message": "Course deleted successfully",
+            "courseCode": normalized_course_code
+        }), 200
+    except mysql.connector.Error as err:
+        conn.rollback()
         return jsonify({"error": str(err)}), 400
     finally:
         cursor.close()

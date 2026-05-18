@@ -34,11 +34,22 @@ Run the API:
 .\.venv\Scripts\python.exe app.py
 ```
 
+Run the React frontend in a second terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend reads its API base URL from `VITE_API_BASE_URL`. Copy `frontend/.env.example` to `frontend/.env` if you need to change the default local API URL.
+
 ## Current Project Shape
 
 This repo is a Flask + MySQL coursework API for a simple Virtual Learning Environment.
 
 - `app.py` contains the API routes and shared helpers.
+- `frontend/` contains the bonus React + Vite web application.
 - `vle.sql` defines the main schema.
 - `reports.sql` defines the report views.
 - `gen_vle.py` regenerates deterministic seed data into `vle_inserts.sql`.
