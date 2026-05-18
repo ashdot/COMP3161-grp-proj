@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getCalendarColor } from "@/lib/calendarColors";
 
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -17,12 +18,12 @@ export default function MiniCalendar({ events = [], onDayClick }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
 
-  const eventDays = new Set(
-    events.map(e => {
+  const eventDays = new Map();
+  events.forEach(e => {
       const d = new Date(e.eventDate + "T00:00:00");
-      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    })
-  );
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      if (!eventDays.has(key)) eventDays.set(key, getCalendarColor(e.courseCode));
+    });
 
   const cells = [];
   // trailing days from previous month
@@ -72,7 +73,7 @@ export default function MiniCalendar({ events = [], onDayClick }) {
         {cells.map((cell, i) => {
           const key = `${cell.date.getFullYear()}-${cell.date.getMonth()}-${cell.date.getDate()}`;
           const isToday = sameDay(cell.date, today);
-          const hasEvent = eventDays.has(key);
+          const eventColor = eventDays.get(key);
           return (
             <button
               key={i}
@@ -83,8 +84,8 @@ export default function MiniCalendar({ events = [], onDayClick }) {
               `}
             >
               {cell.date.getDate()}
-              {hasEvent && !isToday && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-indigo-500"/>
+              {eventColor && !isToday && (
+                <span className={`absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${eventColor.dot}`}/>
               )}
             </button>
           );

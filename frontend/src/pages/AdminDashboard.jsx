@@ -17,7 +17,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Plus, Trash2, Users, BookOpen, BarChart2, AlertTriangle,
-  GraduationCap, TrendingUp, Award, RefreshCw, Search, UserPlus
+  GraduationCap, TrendingUp, Award, RefreshCw, Search, UserPlus, ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,7 @@ import SettingsPage from "./SettingsPage";
 import {
   getCourses, createCourse, deleteCourse, enrollStudent, assignLecturer,
   getUsers, registerUser, getStoredUser, getStoredPassword,
+  getCourseMembers,
   reportCourses50, reportStudents5plus, reportLecturers3,
   reportMostEnrolled, reportTopStudents
 } from "@/api";
@@ -84,6 +85,87 @@ function ReportTable({ title, columns, rows, loading }) {
 }
 
 // ── Main Admin Dashboard ──────────────────────────────────────────────────────
+function CourseRosterPanel({ course, members, loading, error, onBack }) {
+  const lecturers = members.filter(m => m.memberRole?.toLowerCase() === "lecturer");
+  const students = members.filter(m => m.memberRole?.toLowerCase() === "student");
+  const lecturer = lecturers[0];
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <Button variant="ghost" size="sm" onClick={onBack} className="mb-2 h-8 gap-1 px-0 text-[12px] text-indigo-600 hover:bg-transparent">
+            <ArrowLeft size={13}/> Back to courses
+          </Button>
+          <h2 className="text-[17px] font-extrabold text-slate-900">{course.courseCode}: {course.courseName}</h2>
+          <p className="mt-1 text-[12px] text-slate-400">{course.department || "Department not listed"}</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-slate-50 px-3 py-2">
+            <p className="text-[16px] font-extrabold text-slate-900">{members.length}</p>
+            <p className="text-[10px] font-semibold uppercase text-slate-400">Members</p>
+          </div>
+          <div className="rounded-lg bg-indigo-50 px-3 py-2">
+            <p className="text-[16px] font-extrabold text-indigo-700">{students.length}</p>
+            <p className="text-[10px] font-semibold uppercase text-indigo-400">Students</p>
+          </div>
+          <div className="rounded-lg bg-slate-50 px-3 py-2">
+            <p className="text-[16px] font-extrabold text-slate-700">{lecturers.length}</p>
+            <p className="text-[10px] font-semibold uppercase text-slate-400">Lecturers</p>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col gap-2">{[1,2,3].map(i => <Skeleton key={i} className="h-12 rounded-lg"/>)}</div>
+      ) : error ? (
+        <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">{error}</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase text-slate-400">Assigned Lecturer</p>
+            {lecturer ? (
+              <p className="mt-1 text-[13px] font-bold text-slate-800">{lecturer.fname} {lecturer.lname} <span className="font-medium text-slate-400">({lecturer.email})</span></p>
+            ) : (
+              <p className="mt-1 text-[12px] italic text-slate-400">No lecturer returned for this course.</p>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-[14px] font-extrabold text-slate-800">Enrolled Students</h3>
+              <span className="text-[12px] text-slate-400">{students.length} student{students.length === 1 ? "" : "s"}</span>
+            </div>
+            {students.length === 0 ? (
+              <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[12px] italic text-slate-400">No enrolled students.</p>
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-slate-200">
+                {students.map((student, i) => (
+                  <React.Fragment key={student.userID}>
+                    {i > 0 && <Separator/>}
+                    <div className="flex items-center justify-between bg-white px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50">
+                          <Users size={14} className="text-indigo-500"/>
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{student.fname} {student.lname}</p>
+                          <p className="text-[11px] text-slate-400">{student.email}</p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-[10px]">ID {student.userID}</Badge>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("Dashboard");
   const user = getStoredUser();
@@ -99,6 +181,10 @@ export default function AdminDashboard() {
   const [deleteMsg, setDeleteMsg] = useState(null);
   const [enrollForm, setEnrollForm] = useState({ courseCode:"", userID:"" });
   const [enrollMsg, setEnrollMsg] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [courseMembers, setCourseMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [membersError, setMembersError] = useState(null);
 
   // ── Users state ──
   const [users, setUsers] = useState([]);
@@ -158,9 +244,28 @@ export default function AdminDashboard() {
 
   const handleDeleteCourse = async (courseCode) => {
     const r = await deleteCourse(courseCode);
-    if (r.status === 200) { setDeleteMsg(`${courseCode} deleted.`); loadCourses(); }
+    if (r.status === 200) {
+      setDeleteMsg(`${courseCode} deleted.`);
+      if (selectedCourse?.courseCode === courseCode) setSelectedCourse(null);
+      loadCourses();
+    }
     else setDeleteMsg(r.error || "Delete failed");
     setTimeout(()=>setDeleteMsg(null), 4000);
+  };
+
+  const handleSelectCourse = async (course) => {
+    setSelectedCourse(course);
+    setCourseMembers([]);
+    setMembersError(null);
+    setLoadingMembers(true);
+    try {
+      const data = await getCourseMembers(course.courseCode);
+      setCourseMembers(Array.isArray(data) ? data : []);
+    } catch {
+      setMembersError("Could not load course roster.");
+    } finally {
+      setLoadingMembers(false);
+    }
   };
 
   const handleEnroll = async (e) => {
@@ -316,6 +421,15 @@ export default function AdminDashboard() {
 
             {/* Course list */}
             <div className="flex flex-col gap-3">
+              {selectedCourse && (
+                <CourseRosterPanel
+                  course={selectedCourse}
+                  members={courseMembers}
+                  loading={loadingMembers}
+                  error={membersError}
+                  onBack={() => setSelectedCourse(null)}
+                />
+              )}
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 flex-1 max-w-[340px]">
                   <Search size={14} className="text-slate-400 shrink-0"/>
@@ -331,19 +445,22 @@ export default function AdminDashboard() {
                     {filteredCourses.map((c,i)=>(
                       <React.Fragment key={c.courseCode}>
                         {i>0&&<Separator/>}
-                        <div className="flex items-center justify-between px-4 py-3 bg-white">
-                          <div className="flex items-center gap-3">
+                        <div
+                          className={`flex cursor-pointer items-center justify-between px-4 py-3 transition-colors hover:bg-slate-50 ${selectedCourse?.courseCode === c.courseCode ? "bg-indigo-50" : "bg-white"}`}
+                          onClick={() => handleSelectCourse(c)}
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
                               <BookOpen size={14} className="text-indigo-600"/>
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <p className="text-[13px] font-bold text-slate-800">{c.courseCode}: {c.courseName}</p>
                               <p className="text-[11px] text-slate-400">{c.department}</p>
                             </div>
                           </div>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="ghost" className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 p-0">
+                              <Button size="sm" variant="ghost" onClick={(e)=>e.stopPropagation()} className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 p-0">
                                 <Trash2 size={14}/>
                               </Button>
                             </AlertDialogTrigger>

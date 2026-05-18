@@ -424,6 +424,7 @@ import ForumSection from "./Forumsection";
 import SettingsPage from "./SettingsPage";
 import CalendarPage from "./CalendarPage";
 import MiniCalendar from "./MiniCalendar";
+import { getCalendarColor } from "@/lib/calendarColors";
 import {
   getStoredUser, getStudentCourses, getStudentCalendarEvents,
   getCourseContent, getCourseMembers, getStudentCourseGrade,
@@ -455,17 +456,19 @@ function RightSidebar({ events, loadingEvents }) {
           : events.length === 0
           ? <p className="text-[11px] italic text-slate-400">No upcoming events.</p>
           : <div className="flex flex-col gap-2">
-              {events.slice(0, 5).map(ev => (
-                <div key={ev.eventID} className="flex items-center gap-3 rounded-xl bg-slate-100 px-3 py-2.5">
-                  <div className="h-8 w-8 shrink-0 rounded-full bg-slate-500"/>
+              {events.slice(0, 5).map(ev => {
+                const color = getCalendarColor(ev.courseCode);
+                return (
+                <div key={ev.eventID} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${color.softBg}`}>
+                  <div className={`h-8 w-8 shrink-0 rounded-full ${color.dot}`}/>
                   <div className="min-w-0">
-                    <p className="text-[12px] font-bold text-slate-800 truncate">{ev.eventTitle}</p>
+                    <p className={`text-[12px] font-bold truncate ${color.text}`}>{ev.eventTitle}</p>
                     <p className="text-[10px] text-slate-500 truncate">
                       {ev.eventDate}{ev.courseName ? " | " + ev.courseName : ""}
                     </p>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
         }
       </div>
@@ -485,8 +488,8 @@ function CourseDetail({ course, onBack, events, loadingEvents }) {
   const [grade, setGrade]           = useState(null);
   const [loadingGrade, setLoadingGrade]   = useState(false);
   const [subTexts, setSubTexts]     = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [subMsg, setSubMsg]         = useState(null);
+  const [submittingByItem, setSubmittingByItem] = useState({});
+  const [subStatusByItem, setSubStatusByItem]   = useState({});
 
   useEffect(() => {
     getCourseContent(course.courseCode).then(d => {
@@ -515,12 +518,26 @@ function CourseDetail({ course, onBack, events, loadingEvents }) {
 
   const handleSubmit = async (secItemID) => {
     const txt = subTexts[secItemID] || "";
-    if (!txt.trim()) return;
-    setSubmitting(true);
-    const r = await submitAssignment(secItemID, txt);
-    setSubMsg(r.status === 201 ? "Submitted!" : r.error || "Error");
-    setSubmitting(false);
-    setTimeout(() => setSubMsg(null), 3000);
+    if (!txt.trim()) {
+      setSubStatusByItem(p => ({ ...p, [secItemID]: { type: "error", text: "Enter submission text first." } }));
+      return;
+    }
+
+    setSubmittingByItem(p => ({ ...p, [secItemID]: true }));
+    setSubStatusByItem(p => ({ ...p, [secItemID]: null }));
+    try {
+      const r = await submitAssignment(secItemID, txt.trim());
+      if (r.status === 201) {
+        setSubTexts(p => ({ ...p, [secItemID]: "" }));
+        setSubStatusByItem(p => ({ ...p, [secItemID]: { type: "success", text: "Submitted." } }));
+      } else {
+        setSubStatusByItem(p => ({ ...p, [secItemID]: { type: "error", text: r.error || "Submission failed." } }));
+      }
+    } catch {
+      setSubStatusByItem(p => ({ ...p, [secItemID]: { type: "error", text: "Submission failed." } }));
+    } finally {
+      setSubmittingByItem(p => ({ ...p, [secItemID]: false }));
+    }
   };
 
   return (
@@ -598,17 +615,27 @@ function CourseDetail({ course, onBack, events, loadingEvents }) {
                                   )}
                                 </div>
                                 {item.itemtype === "assignment" && (
-                                  <div className="flex gap-2 pl-10">
-                                    <Input
-                                      placeholder="Your answer..."
-                                      value={subTexts[item.secItemID] || ""}
-                                      onChange={e => setSubTexts(p => ({...p, [item.secItemID]: e.target.value}))}
-                                      className="h-8 text-[12px] flex-1"
-                                    />
-                                    <Button size="sm" className="h-8 text-[11px] bg-indigo-600 hover:bg-indigo-700"
-                                      disabled={submitting} onClick={() => handleSubmit(item.secItemID)}>
-                                      Submit
-                                    </Button>
+                                  <div className="flex flex-col gap-1 pl-10">
+                                    <div className="flex gap-2">
+                                      <Input
+                                        placeholder="Your answer..."
+                                        value={subTexts[item.secItemID] || ""}
+                                        onChange={e => {
+                                          setSubTexts(p => ({...p, [item.secItemID]: e.target.value}));
+                                          setSubStatusByItem(p => ({ ...p, [item.secItemID]: null }));
+                                        }}
+                                        className="h-8 text-[12px] flex-1"
+                                      />
+                                      <Button size="sm" className="h-8 text-[11px] bg-indigo-600 hover:bg-indigo-700"
+                                        disabled={!!submittingByItem[item.secItemID]} onClick={() => handleSubmit(item.secItemID)}>
+                                        {submittingByItem[item.secItemID] ? "Submitting..." : "Submit"}
+                                      </Button>
+                                    </div>
+                                    {subStatusByItem[item.secItemID] && (
+                                      <p className={`text-[11px] font-semibold ${subStatusByItem[item.secItemID].type === "success" ? "text-emerald-600" : "text-red-500"}`}>
+                                        {subStatusByItem[item.secItemID].text}
+                                      </p>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -620,7 +647,6 @@ function CourseDetail({ course, onBack, events, loadingEvents }) {
                   );
                 })
             }
-            {subMsg && <p className="text-[12px] font-semibold text-emerald-600">{subMsg}</p>}
           </div>
         )}
 
