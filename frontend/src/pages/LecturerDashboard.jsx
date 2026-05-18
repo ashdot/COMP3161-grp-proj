@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Sidebar from "./Sidebar";
 import ForumSection from "./Forumsection";
 import SettingsPage from "./SettingsPage";
+import { getCalendarColor } from "@/lib/calendarColors";
 import {
   getStoredUser, getLecturerCourses, getCourseContent, getCourseMembers,
   createSection, createSectionItem, getAssignmentSubmissions, gradeSubmission, getCourseCalendarEvents,
@@ -360,15 +361,17 @@ function CourseManager({ course, onBack }) {
           {loadingEvents ? <Skeleton className="h-20 w-full rounded-xl"/> :
             events.length===0 ? <p className="text-sm italic text-slate-400">No events yet.</p> :
             <div className="flex flex-col gap-2">
-              {events.map(ev=>(
-                <div key={ev.eventID} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100"><CalIcon size={16} className="text-indigo-600"/></div>
+              {events.map(ev=>{
+                const color = getCalendarColor(ev.courseCode || course.courseCode);
+                return (
+                <div key={ev.eventID} className={`flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 border-l-4 ${color.border}`}>
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${color.bg}`}><CalIcon size={16} className={color.text}/></div>
                   <div>
                     <p className="text-[13px] font-bold text-slate-800">{ev.eventTitle}</p>
                     <p className="text-[11px] text-slate-400">{ev.eventDate}</p>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           }
         </div>

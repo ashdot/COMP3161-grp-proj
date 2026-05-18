@@ -14,19 +14,12 @@ import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getStoredUser, getStudentCalendarEvents, getStudentCourses } from "@/api";
+import { getCalendarColor } from "@/lib/calendarColors";
 
 const DAYS_FULL  = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const DAYS_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MONTHS     = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const HOURS      = Array.from({ length: 13 }, (_, i) => i + 8); // 8am – 8pm
-
-const COURSE_COLORS = [
-  { bg:"bg-indigo-100", text:"text-indigo-700", dot:"bg-indigo-500",  border:"border-indigo-400"  },
-  { bg:"bg-purple-100", text:"text-purple-700", dot:"bg-purple-500",  border:"border-purple-400"  },
-  { bg:"bg-emerald-100",text:"text-emerald-700",dot:"bg-emerald-500", border:"border-emerald-400" },
-  { bg:"bg-orange-100", text:"text-orange-700", dot:"bg-orange-500",  border:"border-orange-400"  },
-  { bg:"bg-pink-100",   text:"text-pink-700",   dot:"bg-pink-500",    border:"border-pink-400"    },
-];
 
 function sameDay(a, b) {
   return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
@@ -50,10 +43,12 @@ function SidebarMiniCal({ cursor, onNav, onDayClick, events }) {
   const daysInMonth  = new Date(year, month+1, 0).getDate();
   const daysInPrev   = new Date(year, month,   0).getDate();
 
-  const eventDays = new Set(events.map(e => {
+  const eventDays = new Map();
+  events.forEach(e => {
     const d = new Date(e.eventDate + "T00:00:00");
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  }));
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!eventDays.has(key)) eventDays.set(key, getCalendarColor(e.courseCode));
+  });
 
   const cells = [];
   for (let i = firstDay-1; i >= 0; i--)
@@ -90,7 +85,7 @@ function SidebarMiniCal({ cursor, onNav, onDayClick, events }) {
         {cells.map((cell, i) => {
           const key = `${cell.date.getFullYear()}-${cell.date.getMonth()}-${cell.date.getDate()}`;
           const isToday = sameDay(cell.date, today);
-          const hasEvent = eventDays.has(key);
+          const eventColor = eventDays.get(key);
           return (
             <button key={i} onClick={() => onDayClick(cell.date)}
               className={`relative flex h-[22px] w-full items-center justify-center rounded text-[9px] font-medium transition-colors
@@ -98,8 +93,8 @@ function SidebarMiniCal({ cursor, onNav, onDayClick, events }) {
                 ${isToday ? "!bg-indigo-600 !text-white font-bold" : ""}
               `}>
               {cell.date.getDate()}
-              {hasEvent && !isToday && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] w-[3px] rounded-full bg-indigo-500"/>
+              {eventColor && !isToday && (
+                <span className={`absolute bottom-0 left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full ${eventColor.dot}`}/>
               )}
             </button>
           );
@@ -120,8 +115,8 @@ function MyCalendars({ courses, enabled, onToggle }) {
         </button>
       </div>
       <div className="flex flex-col gap-1.5">
-        {courses.map((c, i) => {
-          const color = COURSE_COLORS[i % COURSE_COLORS.length];
+        {courses.map((c) => {
+          const color = getCalendarColor(c.courseCode);
           const on = enabled.has(c.courseCode);
           return (
             <button key={c.courseCode} onClick={() => onToggle(c.courseCode)}
@@ -154,9 +149,6 @@ function MonthView({ cursor, events, courses, enabled, onDayClick }) {
     cells.push({ date: new Date(year, month, d), cur: true });
   while (cells.length < 35)
     cells.push({ date: new Date(year, month+1, cells.length-daysInMonth-firstDay+1), cur: false });
-
-  const courseColorMap = {};
-  courses.forEach((c, i) => { courseColorMap[c.courseCode] = COURSE_COLORS[i % COURSE_COLORS.length]; });
 
   const eventsOnDay = (date) =>
     events.filter(e => {
@@ -192,7 +184,7 @@ function MonthView({ cursor, events, courses, enabled, onDayClick }) {
               </div>
               <div className="flex flex-col gap-0.5">
                 {dayEvents.slice(0,2).map((ev, j) => {
-                  const col = courseColorMap[ev.courseCode] || COURSE_COLORS[0];
+                  const col = getCalendarColor(ev.courseCode);
                   return (
                     <div key={j} className={`flex items-center gap-1 rounded px-1 py-0.5 ${col.bg}`}>
                       <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${col.dot}`}/>
@@ -219,9 +211,6 @@ function WeekView({ cursor, events, courses, enabled }) {
     const d = new Date(ws); d.setDate(ws.getDate() + i); return d;
   });
   const today = new Date();
-  const courseColorMap = {};
-  courses.forEach((c, i) => { courseColorMap[c.courseCode] = COURSE_COLORS[i % COURSE_COLORS.length]; });
-
   const eventsOnDay = (date) =>
     events.filter(e => enabled.has(e.courseCode) && sameDay(new Date(e.eventDate + "T00:00:00"), date));
 
@@ -263,7 +252,7 @@ function WeekView({ cursor, events, courses, enabled }) {
                   ${isToday ? "bg-indigo-50/30" : ""}
                 `}>
                   {dayEvents.map((ev, j) => {
-                    const col = courseColorMap[ev.courseCode] || COURSE_COLORS[0];
+                    const col = getCalendarColor(ev.courseCode);
                     return (
                       <div key={j} className={`mb-0.5 rounded px-1 py-0.5 ${col.bg} border-l-2 ${col.border}`}>
                         <p className={`text-[9px] font-bold truncate ${col.text}`}>{ev.eventTitle}</p>
@@ -283,9 +272,6 @@ function WeekView({ cursor, events, courses, enabled }) {
 // ── DAY VIEW ───────────────────────────────────────────────────────────────────
 function DayView({ cursor, events, courses, enabled }) {
   const today = new Date();
-  const courseColorMap = {};
-  courses.forEach((c, i) => { courseColorMap[c.courseCode] = COURSE_COLORS[i % COURSE_COLORS.length]; });
-
   const dayEvents = events.filter(e =>
     enabled.has(e.courseCode) && sameDay(new Date(e.eventDate + "T00:00:00"), cursor)
   );
@@ -318,7 +304,7 @@ function DayView({ cursor, events, courses, enabled }) {
               </div>
               <div className="flex-1 border-l border-slate-200 px-2 pt-0.5">
                 {h === 9 && hEvents.map((ev, j) => {
-                  const col = courseColorMap[ev.courseCode] || COURSE_COLORS[0];
+                  const col = getCalendarColor(ev.courseCode);
                   return (
                     <div key={j} className={`mb-1 rounded-lg px-3 py-2 ${col.bg} border-l-4 ${col.border}`}>
                       <p className={`text-[12px] font-bold ${col.text}`}>{ev.eventTitle}</p>

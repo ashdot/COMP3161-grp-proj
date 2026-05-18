@@ -40,6 +40,21 @@ Run the React frontend in a second terminal:
 powershell -ExecutionPolicy Bypass -File .\start_frontend.ps1
 ```
 
+Or run the frontend manually:
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
+
+If dependencies are already installed, only run:
+
+```powershell
+cd frontend
+npm.cmd run dev
+```
+
 The frontend reads its API base URL from `VITE_API_BASE_URL`. Copy `frontend/.env.example` to `frontend/.env` if you need to change the default local API URL.
 
 ## Current Project Shape
